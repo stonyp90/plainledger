@@ -71,6 +71,9 @@ export interface IKeycloakAdminService {
    */
   disableUser(userId: string): Promise<void>;
 
+  /** Remove an identity created by a failed registration transaction. */
+  deleteUser(userId: string): Promise<void>;
+
   /**
    * Send password reset email with optional redirect URI
    */

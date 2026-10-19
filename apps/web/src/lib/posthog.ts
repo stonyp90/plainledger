@@ -361,7 +361,7 @@ export const posthogService = new PostHogService();
 // Type declaration for window.posthog
 declare global {
   interface Window {
-    posthog: typeof posthog;
+    posthog?: typeof posthog;
   }
 }
 

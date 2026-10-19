@@ -2,7 +2,7 @@
 # PlainLedger Keycloak Custom Image
 # =============================================================================
 
-FROM quay.io/keycloak/keycloak:26.1.0 as builder
+FROM quay.io/keycloak/keycloak:26.8.1 AS builder
 
 # Enable health and metrics endpoints
 ENV KC_HEALTH_ENABLED=true
@@ -28,7 +28,7 @@ RUN /opt/keycloak/bin/kc.sh build --db=postgres
 # Production Image
 # =============================================================================
 
-FROM quay.io/keycloak/keycloak:26.1.0
+FROM quay.io/keycloak/keycloak:26.8.1
 
 # Copy built artifacts from builder
 COPY --from=builder /opt/keycloak/ /opt/keycloak/

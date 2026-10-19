@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useI18n } from '../../lib/i18n';
-import { config } from '../../lib/config';
+import api from '../../lib/api';
 import { useAuth } from '../../lib/keycloak';
 import {
   Users,
@@ -35,7 +35,7 @@ interface Trial {
 
 export default function AdminOnboarding() {
   const { language } = useI18n();
-  const { token } = useAuth();
+  const { user } = useAuth();
   const isEn = language === 'en';
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,66 +44,30 @@ export default function AdminOnboarding() {
   const [atRisk, setAtRisk] = useState<Trial[]>([]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      const baseUrl = config.api.baseUrl;
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-      };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+    const controller = new AbortController();
+    setIsLoading(true);
+    setError(null);
+    setFunnel(null);
+    setTrials([]);
+    setAtRisk([]);
+    Promise.all([
+      api.get<FunnelMetrics>('/admin/onboarding/funnel', { signal: controller.signal }),
+      api.get<{ trials: Trial[] }>('/admin/onboarding/trials', { signal: controller.signal }),
+      api.get<{ atRisk: Trial[] }>('/admin/onboarding/at-risk', { signal: controller.signal }),
+    ]).then(([funnelResult, trialResult, riskResult]) => {
+      if (controller.signal.aborted) return;
+      if (!Object.values(funnelResult.data).every(value => typeof value === 'number' && Number.isFinite(value) && value >= 0) ||
+          !Array.isArray(trialResult.data.trials) || !Array.isArray(riskResult.data.atRisk)) {
+        throw new Error(isEn ? 'The onboarding response is incomplete.' : 'La réponse d’intégration est incomplète.');
       }
-
-      try {
-        // Fetch all data in parallel
-        const [funnelRes, trialsRes, atRiskRes] = await Promise.allSettled([
-          fetch(`${baseUrl}/api/admin/onboarding/funnel`, { headers }),
-          fetch(`${baseUrl}/api/admin/onboarding/trials`, { headers }),
-          fetch(`${baseUrl}/api/admin/onboarding/at-risk`, { headers }),
-        ]);
-
-        // Process funnel metrics
-        if (funnelRes.status === 'fulfilled' && funnelRes.value.ok) {
-          const data = await funnelRes.value.json();
-          setFunnel(data);
-        } else {
-          // Use mock data for development
-          setFunnel({
-            signups: 0,
-            connected: 0,
-            firstSync: 0,
-            viewedReport: 0,
-            converted: 0,
-          });
-        }
-
-        // Process trials
-        if (trialsRes.status === 'fulfilled' && trialsRes.value.ok) {
-          const data = await trialsRes.value.json();
-          setTrials(data.trials || []);
-        } else {
-          setTrials([]);
-        }
-
-        // Process at-risk
-        if (atRiskRes.status === 'fulfilled' && atRiskRes.value.ok) {
-          const data = await atRiskRes.value.json();
-          setAtRisk(data.atRisk || []);
-        } else {
-          setAtRisk([]);
-        }
-      } catch (err) {
-        console.error('Failed to fetch onboarding data:', err);
-        setError(isEn ? 'Failed to load data' : 'Échec du chargement des données');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [token, isEn]);
+      setFunnel(funnelResult.data);
+      setTrials(trialResult.data.trials);
+      setAtRisk(riskResult.data.atRisk);
+    }).catch(cause => {
+      if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : (isEn ? 'Failed to load data.' : 'Échec du chargement des données.'));
+    }).finally(() => { if (!controller.signal.aborted) setIsLoading(false); });
+    return () => controller.abort();
+  }, [user?.id, user?.organization, isEn]);
 
   const funnelSteps = [
     { key: 'signups', icon: Users, label: isEn ? 'Signups' : 'Inscriptions', color: 'primary' },

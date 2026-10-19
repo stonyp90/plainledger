@@ -2,6 +2,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { UserSettingsEntity } from "./entities/user-settings.entity";
+import { validateUserSettings } from '@infrastructure/services/settings-validation';
 
 export interface UpdateUserSettingsInput {
   notificationPreferences?: UserSettingsEntity["notificationPreferences"];
@@ -39,6 +40,7 @@ export class PostgresUserSettingsRepository {
     userId: string,
     input: UpdateUserSettingsInput,
   ): Promise<UserSettingsEntity> {
+    validateUserSettings(input);
     const existing = await this.findByUserId(userId);
 
     if (existing) {
@@ -75,7 +77,14 @@ export class PostgresUserSettingsRepository {
       // Create new
       const settings = this.repository.create({
         userId,
-        ...input,
+        notificationPreferences: input.notificationPreferences,
+        uiPreferences: input.uiPreferences,
+        featurePreferences: input.featurePreferences,
+        chartPreferences: input.chartPreferences,
+        dashboardConfig: input.dashboardConfig,
+        savedViews: input.savedViews,
+        aiPins: input.aiPins,
+        recentItems: input.recentItems,
       });
 
       const saved = await this.repository.save(settings);

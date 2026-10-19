@@ -242,7 +242,7 @@ export function CompanyInfoStep({
                             className="text-[10px] px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap"
                             style={{
                               backgroundColor: `${theme.gold}20`,
-                              color: theme.goldDark,
+                              color: colors.goldDark,
                             }}
                           >
                             {isEn ? 'Popular' : 'Populaire'}
@@ -315,7 +315,7 @@ export function CompanyInfoStep({
 }
 
 // Provider Logo Components for Onboarding
-const ProviderLogos: Record<string, JSX.Element> = {
+const ProviderLogos: Record<string, React.JSX.Element> = {
   quickbooks: (
     <svg viewBox="0 0 40 40" className="w-8 h-8">
       <circle cx="20" cy="20" r="20" fill="#2CA01C" />

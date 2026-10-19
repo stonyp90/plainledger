@@ -469,7 +469,7 @@ export default function ViewSwitcher({
                       : isCurrent
                         ? 'rgb(var(--color-success) / 0.05)'
                         : 'transparent',
-                    ringColor: isSelected ? 'rgb(var(--color-primary-500))' : undefined,
+                    boxShadow: `0 0 0 2px ${isSelected ? 'rgb(var(--color-primary-500))' : undefined}`,
                   }}
                   onClick={() => handleSelect(result)}
                   onMouseEnter={() => setSelectedIndex(index)}

@@ -3,10 +3,13 @@ import { GqlExecutionContext } from "@nestjs/graphql";
 import { Reflector } from "@nestjs/core";
 import { GqlAuthGuard } from "../guards/gql-auth.guard";
 import { createTestIdentityProvider } from "../../auth/__tests__/test-identity-provider";
+import { Repository } from 'typeorm';
+import { UserProfileEntity } from '../../persistence/postgres/entities/user-profile.entity';
 
 describe("GqlAuthGuard", () => {
   const identity = createTestIdentityProvider();
   let guard: GqlAuthGuard;
+  const profiles = { findOne: jest.fn() };
   const handler = () => undefined;
   class Resolver {}
   const makeContext = (authorization?: unknown) => {
@@ -26,7 +29,8 @@ describe("GqlAuthGuard", () => {
     identity.config.set("NODE_ENV", "test");
     identity.config.set("SKIP_AUTH", "false");
     identity.onlineValidation.mockImplementation(async (token) => token);
-    guard = new GqlAuthGuard(new Reflector(), identity.config, identity.keycloak);
+    profiles.findOne.mockReset().mockResolvedValue({ id: 'user-123', organizationId: 'org-db-uuid', role: 'viewer', organization: { tenantId: 'org-123' } });
+    guard = new GqlAuthGuard(new Reflector(), identity.config, identity.keycloak, profiles as unknown as Repository<UserProfileEntity>);
   });
   afterEach(() => { guard.onModuleDestroy(); jest.spyOn(GqlExecutionContext, "create").mockRestore(); Reflect.deleteMetadata("isPublic", handler); Reflect.deleteMetadata("isPublic", Resolver); });
 
@@ -37,7 +41,7 @@ describe("GqlAuthGuard", () => {
   it("attaches a verified identity and tenant to the request", async () => {
     const { request, context } = makeContext(`Bearer ${identity.issueToken()}`);
     await expect(guard.canActivate(context)).resolves.toBe(true);
-    expect(request.user).toMatchObject({ sub: "user-123", userId: "user-123", organizationId: "org-123", roles: ["viewer"] });
+    expect(request.user).toMatchObject({ sub: "user-123", userId: "user-123", organizationId: "org-123", roles: ["user", "viewer"] });
   });
 
   it("rejects expired tokens using the real grant manager", async () => {
@@ -45,9 +49,26 @@ describe("GqlAuthGuard", () => {
   });
 
   it("maps supported alternate organization claims after verification", async () => {
+    profiles.findOne.mockResolvedValue({ organizationId: 'org-db-uuid', role: 'viewer', organization: { tenantId: 'alternative-org' } });
     const { request, context } = makeContext(`Bearer ${identity.issueToken({ organization: undefined, org_id: "alternative-org" })}`);
     await guard.canActivate(context);
     expect(request.user).toMatchObject({ organizationId: "alternative-org" });
+  });
+
+  it('rejects a revoked membership even when the token remains valid', async () => {
+    profiles.findOne.mockResolvedValue(null);
+    await expect(guard.canActivate(makeContext(`Bearer ${identity.issueToken()}`).context)).rejects.toMatchObject({ status: 403 });
+  });
+
+  it('rejects a profile that belongs to a different tenant', async () => {
+    profiles.findOne.mockResolvedValue({ organizationId: 'other-uuid', organization: { tenantId: 'other-org' } });
+    await expect(guard.canActivate(makeContext(`Bearer ${identity.issueToken()}`).context)).rejects.toMatchObject({ status: 403 });
+  });
+
+  it('replaces stale tenant privilege claims with the current database role', async () => {
+    const { request, context } = makeContext(`Bearer ${identity.issueToken({ realm_access: { roles: ['owner'] } })}`);
+    await guard.canActivate(context);
+    expect(request.user).toMatchObject({ roles: ['user', 'viewer'] });
   });
 
   it.each([handler, Resolver])("honors explicit public metadata", async (target) => {

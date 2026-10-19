@@ -720,7 +720,7 @@ function DesktopPermissionMatrix({ roles, categories, onTogglePermission, isEdit
                     <AlertTriangle 
                       className="w-3 h-3 flex-shrink-0" 
                       style={{ color: 'rgb(var(--color-warning))' }}
-                      title={isEn ? 'Critical permission' : 'Permission critique'}
+                      aria-label={isEn ? 'Critical permission' : 'Permission critique'}
                     />
                   )}
                 </div>

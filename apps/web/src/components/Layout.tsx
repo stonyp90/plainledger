@@ -614,6 +614,9 @@ export default function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuth();
   const {
     currentTenant,
+    isLoading: organizationLoading,
+    error: organizationError,
+    refreshTenants,
     hasPermission,
     isInternalStaff,
     canManageSettings,
@@ -1771,7 +1774,13 @@ export default function Layout({ children }: LayoutProps) {
           className="flex-1 p-2.5 sm:p-3 lg:p-4 xl:p-5 overflow-auto min-h-0"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
-          {children}
+          {organizationLoading ? <div role="status" className="p-6" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+            {language === 'en' ? 'Loading your organization…' : 'Chargement de votre organisation…'}
+          </div> : organizationError ? <section className="mx-auto max-w-xl rounded-xl border p-6 space-y-4" style={{ borderColor: 'rgb(var(--color-border))', backgroundColor: 'rgb(var(--color-surface))' }}>
+            <h1 className="text-xl font-semibold">{language === 'en' ? 'Your organization could not be loaded' : 'Votre organisation n’a pas pu être chargée'}</h1>
+            <p role="alert" className="break-words">{organizationError}</p>
+            <button type="button" onClick={() => void refreshTenants()} className="rounded-lg px-4 py-3 text-white" style={{ backgroundColor: 'rgb(var(--color-primary-600))' }}>{language === 'en' ? 'Try again' : 'Réessayer'}</button>
+          </section> : children}
         </div>
       </main>
 

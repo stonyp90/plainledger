@@ -23,6 +23,7 @@ import MontageFinancier from './pages/MontageFinancier';
 // Store removed - using Landing as main website
 import Onboarding from './components/Onboarding';
 import Signup from './pages/Signup';
+import JoinOrganization from './pages/JoinOrganization';
 import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
@@ -118,7 +119,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!authenticated) {
     // Redirect to custom login page instead of Keycloak's UI
     // This maintains our custom UI/UX while using Keycloak securely via API
-    return <Navigate to="/login" replace />;
+    return <Navigate to={`/login?redirect=${encodeURIComponent(location.pathname + location.search + location.hash)}`} replace />;
   }
 
   // Check if email verification is needed (skip for verify-email route itself)
@@ -267,7 +268,9 @@ function App() {
           <Route path="/store" element={<Navigate to="/" replace />} />
           <Route path="/landing" element={<Navigate to="/" replace />} />
 
-          {/* Signup - unified 3-step signup flow */}
+          <Route path="/join" element={<JoinOrganization />} />
+
+          {/* Signup creates the account; protected onboarding follows verification. */}
           <Route
             path="/signup"
             element={authenticated ? <Navigate to="/app" replace /> : <Signup />}

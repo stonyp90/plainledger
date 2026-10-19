@@ -14,6 +14,7 @@ import {
 import { Roles } from "nest-keycloak-connect";
 import { JwtAuthGuard } from "../../auth/jwt-auth.guard";
 import { AuthenticatedUser } from "../../auth/keycloak-token";
+import { validateOrganizationSettings, validateUserSettings } from '@infrastructure/services/settings-validation';
 import { SettingsService } from "@infrastructure/services/settings.service";
 import { PostgresOrganizationSettingsRepository } from "@infrastructure/persistence/postgres/postgres-organization-settings.repository";
 import { PostgresUserSettingsRepository } from "@infrastructure/persistence/postgres/postgres-user-settings.repository";
@@ -40,9 +41,6 @@ export class SettingsController {
    */
   private async getOrganizationIdFromUser(req: { user?: AuthenticatedUser }, requireWrite = false): Promise<string> {
     const userId = req.user?.sub;
-    if (requireWrite && !req.user?.roles.some((role) => ["owner", "admin"].includes(role))) {
-      throw new ForbiddenException("Organization administrator access required");
-    }
     if (!userId) {
       throw new BadRequestException("User ID not found in token");
     }
@@ -57,6 +55,9 @@ export class SettingsController {
       );
     }
 
+    if (requireWrite && !["owner", "admin"].includes(userProfile.role || "")) {
+      throw new ForbiddenException("Organization administrator access required");
+    }
     return userProfile.organizationId;
   }
 
@@ -69,7 +70,7 @@ export class SettingsController {
    * GET /api/v1/settings/organization
    */
   @Get("organization")
-  @Roles({ roles: ["user", "viewer", "accountant", "admin", "owner"] })
+  @Roles({ roles: ["user", "member", "viewer", "accountant", "admin", "owner"] })
   async getOrganizationSettings(@Request() req: any) {
     try {
       const organizationId = await this.getOrganizationIdFromUser(req);
@@ -96,7 +97,7 @@ export class SettingsController {
       const organizationId = await this.getOrganizationIdFromUser(req, true);
       const updated = await this.settingsService.updateOrganizationSettings(
         organizationId,
-        body,
+        (validateOrganizationSettings(body), body),
       );
       return updated;
     } catch (error) {
@@ -122,7 +123,7 @@ export class SettingsController {
       const organizationId = await this.getOrganizationIdFromUser(req, true);
       const updated = await this.settingsService.updateOrganizationThresholds(
         organizationId,
-        thresholds,
+        (validateOrganizationSettings({ thresholdSettings: thresholds }), thresholds),
       );
       return updated;
     } catch (error) {
@@ -143,7 +144,7 @@ export class SettingsController {
       const organizationId = await this.getOrganizationIdFromUser(req, true);
       const updated = await this.settingsService.updateOrganizationBranding(
         organizationId,
-        branding,
+        (validateOrganizationSettings({ brandingSettings: branding }), branding),
       );
       return updated;
     } catch (error) {
@@ -168,7 +169,7 @@ export class SettingsController {
       const updated =
         await this.settingsService.updateOrganizationNotificationIntegrations(
           organizationId,
-          integrations,
+          (validateOrganizationSettings({ notificationIntegrations: integrations }), integrations),
         );
       return updated;
     } catch (error) {
@@ -189,7 +190,7 @@ export class SettingsController {
    * Accessible to all authenticated users (including demo users)
    */
   @Get("user")
-  @Roles({ roles: ["user", "viewer", "admin", "owner", "accountant"] })
+  @Roles({ roles: ["user", "member", "viewer", "admin", "owner", "accountant"] })
   async getUserSettings(@Request() req: any) {
     try {
       const userId = req.user?.sub || req.user?.id;
@@ -215,7 +216,7 @@ export class SettingsController {
    */
   @Put("user")
   @HttpCode(HttpStatus.OK)
-  @Roles({ roles: ["user", "viewer", "admin", "owner", "accountant"] })
+  @Roles({ roles: ["user", "member", "viewer", "admin", "owner", "accountant"] })
   async updateUserSettings(@Request() req: any, @Body() body: any) {
     try {
       const userId = req.user?.sub || req.user?.id;
@@ -225,7 +226,7 @@ export class SettingsController {
 
       const updated = await this.settingsService.updateUserSettings(
         userId,
-        body,
+        (validateUserSettings(body), body),
       );
       return updated;
     } catch (error) {
@@ -241,7 +242,7 @@ export class SettingsController {
    */
   @Put("user/notifications")
   @HttpCode(HttpStatus.OK)
-  @Roles({ roles: ["user", "viewer", "admin", "owner", "accountant"] })
+  @Roles({ roles: ["user", "member", "viewer", "admin", "owner", "accountant"] })
   async updateUserNotificationPreferences(
     @Request() req: any,
     @Body() preferences: any,
@@ -255,7 +256,7 @@ export class SettingsController {
       const updated =
         await this.settingsService.updateUserNotificationPreferences(
           userId,
-          preferences,
+          (validateUserSettings({ notificationPreferences: preferences }), preferences),
         );
       return updated;
     } catch (error) {
@@ -273,7 +274,7 @@ export class SettingsController {
    */
   @Put("user/ui")
   @HttpCode(HttpStatus.OK)
-  @Roles({ roles: ["user", "viewer", "admin", "owner", "accountant"] })
+  @Roles({ roles: ["user", "member", "viewer", "admin", "owner", "accountant"] })
   async updateUserUIPreferences(@Request() req: any, @Body() preferences: any) {
     try {
       const userId = req.user?.sub || req.user?.id;
@@ -283,7 +284,7 @@ export class SettingsController {
 
       const updated = await this.settingsService.updateUserUIPreferences(
         userId,
-        preferences,
+        (validateUserSettings({ uiPreferences: preferences }), preferences),
       );
       return updated;
     } catch (error) {

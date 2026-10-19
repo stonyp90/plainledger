@@ -3,7 +3,7 @@
   { "path": "/privacy", "heading": "Privacy|confidentialité" },
   { "path": "/terms", "heading": "Terms|Conditions" },
   { "path": "/security", "heading": "Security|Sécurité" },
-  { "path": "/quebec", "heading": "Québec|Quebec" },
+  { "path": "/quebec", "heading": "Québec|Quebec|québécois" },
   { "path": "/canada", "heading": "Canada|Canadian|canadien" },
   { "path": "/tools/sred-calculator", "heading": "SR&ED|RS&DE|RS-DE|Calculator|Calculateur" }
 ]

@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { ArrowLeft, Download, RefreshCw, Printer, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useIncomeStatement } from '../hooks/useFinancialData';
@@ -25,6 +25,7 @@ export default function IncomeStatement() {
   const [page, setPage] = useState(1);
   const [refreshing, setRefreshing] = useState(false);
   const [actionError, setActionError] = useState('');
+  const [printing, setPrinting] = useState(false);
   const { data, isLoading, error, refresh } = useIncomeStatement(period.start, period.end);
 
   const sections = useMemo(() => data ? [
@@ -48,13 +49,28 @@ export default function IncomeStatement() {
   const hasData = rows.length > 0 && !invalidData && !invalidTotals;
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
-  const visibleRows = rows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const visibleRows = printing ? rows : rows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const currency = data?.currency || currentTenant?.settings.currency || 'CAD';
   const currencyFormatter = useMemo(() => {
     try { return new Intl.NumberFormat(isEn ? 'en-CA' : 'fr-CA', { style: 'currency', currency }); }
     catch { return new Intl.NumberFormat(isEn ? 'en-CA' : 'fr-CA', { minimumFractionDigits: 2 }); }
   }, [currency, isEn]);
   const money = (value: number) => currencyFormatter.format(value);
+
+  useEffect(() => {
+    if (!printing) return;
+    const finishPrinting = () => setPrinting(false);
+    window.addEventListener('afterprint', finishPrinting);
+    // React must render every account before the browser takes its print snapshot.
+    const frame = window.requestAnimationFrame(() => {
+      try { window.print(); }
+      catch { setPrinting(false); setActionError(isEn ? 'Printing is unavailable in this browser.' : 'L’impression est indisponible dans ce navigateur.'); }
+    });
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('afterprint', finishPrinting);
+    };
+  }, [printing, isEn]);
 
   const applyPeriod = (event: FormEvent) => {
     event.preventDefault();
@@ -99,6 +115,7 @@ export default function IncomeStatement() {
           <div className="min-w-0">
             <h1 className="text-2xl font-bold break-words">{isEn ? 'Income statement' : 'État des résultats'}</h1>
             <p className="mt-1 text-sm text-muted break-words">{currentTenant?.name} · {currency}</p>
+            {data?.isDemoData && <p className="mt-2 text-sm font-medium" role="note">{isEn ? 'Sample data — development preview' : 'Données d’exemple — aperçu de développement'}</p>}
           </div>
         </div>
         <div className="flex flex-wrap gap-2 print:hidden">
@@ -108,7 +125,7 @@ export default function IncomeStatement() {
           <button type="button" className="btn-secondary" onClick={exportCsv} disabled={!hasData || isLoading || !!error}>
             <Download className="h-4 w-4" />{isEn ? 'Export CSV' : 'Exporter CSV'}
           </button>
-          <button type="button" className="btn-secondary" onClick={() => window.print()} disabled={!hasData || isLoading || !!error}>
+          <button type="button" className="btn-secondary" onClick={() => setPrinting(true)} disabled={!hasData || isLoading || !!error || printing}>
             <Printer className="h-4 w-4" />{isEn ? 'Print / save PDF' : 'Imprimer / PDF'}
           </button>
         </div>
@@ -166,13 +183,13 @@ export default function IncomeStatement() {
           {(data?.unclassifiedExpenses?.length ?? 0) > 0 && <p className="rounded-lg bg-[rgb(var(--color-bg-muted))] p-4 text-sm" role="note">
             {isEn ? 'Some expense accounts have no source classification. They are included in total expenses and net income; gross and operating margins are unavailable until these accounts are classified.' : 'Certains comptes de charges ne sont pas classés à la source. Ils sont inclus dans le total des charges et le résultat net; les marges brute et d’exploitation seront disponibles après leur classement.'}
           </p>}
-          <section className="card min-w-0 p-0 overflow-hidden" aria-label={isEn ? 'Income statement account lines' : 'Comptes de l’état des résultats'}>
+          <section className="card min-w-0 p-0 overflow-hidden print:overflow-visible" aria-label={isEn ? 'Income statement account lines' : 'Comptes de l’état des résultats'}>
             <div className="border-b p-4" style={{ borderColor: 'rgb(var(--color-border))' }}>
               <p className="font-semibold">{period.start} — {period.end}</p>
               {!data?.hasComparison && <p className="mt-1 text-sm text-muted">{isEn ? 'Prior-period comparison is not available for this report.' : 'La comparaison avec la période précédente n’est pas disponible pour ce rapport.'}</p>}
             </div>
-            <div className="overflow-x-auto" role="region" tabIndex={0} aria-label={isEn ? 'Scrollable account table' : 'Tableau des comptes défilant'}>
-              <table className="w-full min-w-[640px] text-sm">
+            <div className="overflow-x-auto print:overflow-visible" role="region" tabIndex={0} aria-label={isEn ? 'Scrollable account table' : 'Tableau des comptes défilant'}>
+              <table className="w-full min-w-[640px] print:min-w-0 text-sm">
                 <caption className="sr-only">{isEn ? 'Actual income statement account balances' : 'Soldes réels des comptes de résultats'}</caption>
                 <thead className="bg-[rgb(var(--color-bg-muted))]"><tr>
                   <th scope="col" className="p-3 text-left">{isEn ? 'Section' : 'Section'}</th>

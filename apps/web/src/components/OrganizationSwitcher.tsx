@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { 
   Building2, 
   ChevronDown, 
@@ -29,9 +29,9 @@ import {
 } from 'lucide-react';
 import { useTenant, type Tenant, type TenantInvitation } from '../contexts/TenantContext';
 import { useNotifications } from '../contexts/NotificationContext';
-import { RoleSelector, ROLE_DEFINITIONS } from './RolesPermissions';
+import { ROLE_DEFINITIONS } from './RolesPermissions';
 import { useI18n } from '../lib/i18n';
-import { generateInvitationEmail, generateInvitationEmailText, type SectionAccess } from '../lib/emailTemplates';
+import { useAuth } from '../lib/keycloak';
 
 interface OrganizationSwitcherProps {
   compact?: boolean;
@@ -57,6 +57,12 @@ export default function OrganizationSwitcher({ compact = false }: OrganizationSw
   const [newOrgName, setNewOrgName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+  useEffect(() => {
+    setIsOpen(false);
+    setShowCreateModal(false);
+    setNewOrgName('');
+  }, [user?.id, currentTenant?.id]);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -90,37 +96,26 @@ export default function OrganizationSwitcher({ compact = false }: OrganizationSw
       return;
     }
     
-    await switchTenant(tenant.id);
-    setIsOpen(false);
-    
-    showToast({
-      type: 'success',
-      title: 'Organisation changée',
-      message: `Vous travaillez maintenant sur "${tenant.name}"`,
-    });
+    try {
+      await switchTenant(tenant.id);
+      setIsOpen(false);
+      showToast('success', isEn ? `You are now working in ${tenant.name}.` : `Vous travaillez maintenant dans ${tenant.name}.`);
+    } catch (error) {
+      showToast('error', error instanceof Error ? error.message : (isEn ? 'Unable to switch organization.' : "Impossible de changer d’organisation."));
+    }
   };
 
   const handleCreateOrg = async () => {
     if (!newOrgName.trim()) return;
-    
     setIsCreating(true);
     try {
       const newTenant = await createTenant({ name: newOrgName.trim() });
       setShowCreateModal(false);
       setNewOrgName('');
       setIsOpen(false);
-      
-      showToast({
-        type: 'success',
-        title: 'Organisation créée',
-        message: `"${newTenant.name}" a été créée avec succès.`,
-      });
+      showToast('success', isEn ? `${newTenant.name} was created.` : `${newTenant.name} a été créée.`);
     } catch (error) {
-      showToast({
-        type: 'error',
-        title: 'Erreur',
-        message: 'Impossible de créer l\'organisation.',
-      });
+      showToast('error', error instanceof Error ? error.message : (isEn ? 'Unable to create organization.' : "Impossible de créer l’organisation."));
     } finally {
       setIsCreating(false);
     }
@@ -167,11 +162,6 @@ export default function OrganizationSwitcher({ compact = false }: OrganizationSw
         bg: 'rgb(var(--color-bg-muted))', 
         text: 'rgb(var(--color-text-muted))',
         border: 'rgb(var(--color-border))'
-      },
-      starter: { 
-        bg: 'rgb(var(--color-info) / 0.1)', 
-        text: 'rgb(var(--color-info))',
-        border: 'rgb(var(--color-info) / 0.2)'
       },
       professional: { 
         bg: 'rgb(var(--color-success) / 0.1)', 
@@ -582,1150 +572,237 @@ export default function OrganizationSwitcher({ compact = false }: OrganizationSw
   );
 }
 
-// Section access defaults by role
-const DEFAULT_SECTION_ACCESS: Record<'admin' | 'member' | 'viewer', SectionAccess> = {
-  admin: {
-    dashboard: true,
-    balanceSheet: true,
-    incomeStatement: true,
-    cashFlow: true,
-    anomalies: true,
-    connections: true,
-    reports: true,
-    settings: true,
-  },
-  member: {
-    dashboard: true,
-    balanceSheet: true,
-    incomeStatement: true,
-    cashFlow: true,
-    anomalies: true,
-    connections: false,
-    reports: true,
-    settings: false,
-  },
-  viewer: {
-    dashboard: true,
-    balanceSheet: true,
-    incomeStatement: true,
-    cashFlow: true,
-    anomalies: true,
-    connections: false,
-    reports: true,
-    settings: false,
-  },
-};
+type EditableMemberRole = 'admin' | 'member' | 'viewer';
+const MEMBER_PAGE_SIZE = 50;
 
-// Section definitions for the UI
-const SECTION_DEFINITIONS = [
-  { 
-    id: 'dashboard' as keyof SectionAccess, 
-    icon: LayoutDashboard, 
-    nameEn: 'Dashboard', 
-    nameFr: 'Tableau de bord',
-    descEn: 'KPIs, financial health score',
-    descFr: 'KPIs, score de santé financière',
-  },
-  { 
-    id: 'balanceSheet' as keyof SectionAccess, 
-    icon: FileText, 
-    nameEn: 'Balance Sheet', 
-    nameFr: 'Bilan',
-    descEn: 'Assets, liabilities, equity',
-    descFr: 'Actifs, passifs, capitaux propres',
-  },
-  { 
-    id: 'incomeStatement' as keyof SectionAccess, 
-    icon: TrendingUp, 
-    nameEn: 'Income Statement', 
-    nameFr: 'État des résultats',
-    descEn: 'Revenue, expenses, profit',
-    descFr: 'Revenus, dépenses, bénéfices',
-  },
-  { 
-    id: 'cashFlow' as keyof SectionAccess, 
-    icon: Banknote, 
-    nameEn: 'Cash Flow', 
-    nameFr: 'Flux de trésorerie',
-    descEn: 'Operating, investing, financing',
-    descFr: 'Exploitation, investissement, financement',
-  },
-  { 
-    id: 'anomalies' as keyof SectionAccess, 
-    icon: AlertCircle, 
-    nameEn: 'Anomaly Detection', 
-    nameFr: 'Détection d\'anomalies',
-    descEn: 'Intelligent insights',
-    descFr: 'Insights alimentés par l\'IA',
-  },
-  { 
-    id: 'connections' as keyof SectionAccess, 
-    icon: Link2, 
-    nameEn: 'Data Connections', 
-    nameFr: 'Connexions de données',
-    descEn: 'QuickBooks, Xero, etc.',
-    descFr: 'QuickBooks, Xero, etc.',
-    adminOnly: true,
-  },
-  { 
-    id: 'reports' as keyof SectionAccess, 
-    icon: FileBarChart, 
-    nameEn: 'Reports', 
-    nameFr: 'Rapports',
-    descEn: 'Generate and export',
-    descFr: 'Générer et exporter',
-  },
-  { 
-    id: 'settings' as keyof SectionAccess, 
-    icon: Cog, 
-    nameEn: 'Settings', 
-    nameFr: 'Paramètres',
-    descEn: 'Organization settings',
-    descFr: 'Paramètres organisation',
-    adminOnly: true,
-  },
-];
-
-// Role dropdown component with better UI
-interface RoleDropdownProps {
-  value: 'admin' | 'member' | 'viewer';
-  onChange: (role: 'admin' | 'member' | 'viewer') => void;
-}
-
-function RoleDropdown({ value, onChange }: RoleDropdownProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const { language } = useI18n();
-  const isEn = language === 'en';
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const roles = [
-    { 
-      id: 'admin' as const, 
-      icon: Shield, 
-      labelEn: 'Administrator', 
-      labelFr: 'Administrateur',
-      color: { bg: 'rgb(var(--color-primary-500) / 0.1)', text: 'rgb(var(--color-primary-600))', border: 'rgb(var(--color-primary-500) / 0.3)' }
-    },
-    { 
-      id: 'member' as const, 
-      icon: User, 
-      labelEn: 'Member', 
-      labelFr: 'Membre',
-      color: { bg: 'rgb(var(--color-primary-100))', text: 'rgb(var(--color-primary-700))', border: 'rgb(var(--color-primary-200))' }
-    },
-    { 
-      id: 'viewer' as const, 
-      icon: Eye, 
-      labelEn: 'Viewer', 
-      labelFr: 'Lecteur',
-      color: { bg: 'rgb(var(--color-bg-muted))', text: 'rgb(var(--color-text-muted))', border: 'rgb(var(--color-border))' }
-    },
-  ];
-
-  const currentRole = roles.find(r => r.id === value) || roles[1];
-  const CurrentIcon = currentRole.icon;
-
-  return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg border transition-all min-w-[140px]"
-        style={{ 
-          backgroundColor: currentRole.color.bg,
-          borderColor: currentRole.color.border,
-        }}
-      >
-        <CurrentIcon className="w-4 h-4" style={{ color: currentRole.color.text }} />
-        <span 
-          className="text-sm font-medium flex-1 text-left"
-          style={{ color: currentRole.color.text }}
-        >
-          {isEn ? currentRole.labelEn : currentRole.labelFr}
-        </span>
-        <ChevronDown 
-          className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-          style={{ color: currentRole.color.text }}
-        />
-      </button>
-
-      {isOpen && (
-        <div 
-          className="absolute right-0 mt-1 w-48 rounded-xl z-50 overflow-hidden shadow-lg"
-          style={{ 
-            backgroundColor: 'rgb(var(--color-surface))',
-            border: '1px solid rgb(var(--color-border))',
-          }}
-        >
-          {roles.map((role) => {
-            const RoleIcon = role.icon;
-            const isSelected = value === role.id;
-            
-            return (
-              <button
-                key={role.id}
-                onClick={() => {
-                  onChange(role.id);
-                  setIsOpen(false);
-                }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-[rgb(var(--color-bg-muted))]"
-                style={{
-                  backgroundColor: isSelected ? 'rgb(var(--color-bg-subtle))' : 'transparent',
-                }}
-              >
-                <div 
-                  className="w-7 h-7 rounded-md flex items-center justify-center"
-                  style={{ 
-                    backgroundColor: role.color.bg,
-                  }}
-                >
-                  <RoleIcon className="w-4 h-4" style={{ color: role.color.text }} />
-                </div>
-                <span 
-                  className="text-sm font-medium flex-1"
-                  style={{ color: 'rgb(var(--color-text))' }}
-                >
-                  {isEn ? role.labelEn : role.labelFr}
-                </span>
-                {isSelected && (
-                  <Check className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
-                )}
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Team members component for settings
+/** Durable membership records come from the server; freshly issued links stay in memory. */
 export function TeamMembersSection() {
-  const { 
-    currentTenant, 
-    getMembers, 
-    inviteMember, 
-    updateMemberRole, 
-    removeMember,
-    canManageMembers,
-    isOwner,
-    getInvitations,
-    revokeInvitation,
-    resendInvitation,
-  } = useTenant();
+  const { currentTenant, getMembers, inviteMember, updateMemberRole, removeMember,
+    canManageMembers, getInvitations, revokeInvitation, resendInvitation } = useTenant();
+  const { user } = useAuth();
   const { showToast } = useNotifications();
   const { language } = useI18n();
   const isEn = language === 'en';
-  
   const [members, setMembers] = useState<Awaited<ReturnType<typeof getMembers>>>([]);
   const [pendingInvitations, setPendingInvitations] = useState<TenantInvitation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const [inviteStep, setInviteStep] = useState<'details' | 'access' | 'preview'>('details');
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<'admin' | 'member' | 'viewer'>('member');
-  const [sectionAccess, setSectionAccess] = useState<SectionAccess>(DEFAULT_SECTION_ACCESS.member);
+  const [inviteRole, setInviteRole] = useState<EditableMemberRole>('member');
   const [isInviting, setIsInviting] = useState(false);
-  const [showEmailPreview, setShowEmailPreview] = useState(false);
-  const [customMessage, setCustomMessage] = useState('');
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [memberPage, setMemberPage] = useState(0);
+  const [invitationPage, setInvitationPage] = useState(0);
+  const scopeRef = useRef(0);
 
-  useEffect(() => {
-    loadMembers();
-  }, [currentTenant]);
+  const errorMessage = (error: unknown) => error instanceof Error ? error.message :
+    (isEn ? 'The request failed. Please try again.' : 'La demande a échoué. Veuillez réessayer.');
 
-  // Reset section access when role changes
-  useEffect(() => {
-    setSectionAccess(DEFAULT_SECTION_ACCESS[inviteRole]);
-  }, [inviteRole]);
-
-  const loadMembers = async () => {
+  const loadMembers = useCallback(async () => {
+    const scope = scopeRef.current;
     setIsLoading(true);
+    setLoadError(null);
     try {
-      const [membersData, invitationsData] = await Promise.all([
-        getMembers(),
-        getInvitations(),
+      const [nextMembers, nextInvitations] = await Promise.all([
+        getMembers(), canManageMembers ? getInvitations() : Promise.resolve([]),
       ]);
-      setMembers(membersData);
-      setPendingInvitations(invitationsData.filter(inv => inv.status === 'pending'));
+      if (scope !== scopeRef.current) return;
+      if (!Array.isArray(nextMembers) || !Array.isArray(nextInvitations)) {
+        throw new Error('The server returned invalid membership data.');
+      }
+      setMembers(nextMembers);
+      setPendingInvitations(previous => nextInvitations.filter(invitation => invitation.status === 'pending').map(invitation => ({
+        ...invitation, inviteUrl: invitation.inviteUrl ?? previous.find(item => item.id === invitation.id)?.inviteUrl,
+      })));
     } catch (error) {
-      console.error('Failed to load members:', error);
+      if (scope === scopeRef.current) setLoadError(error instanceof Error ? error.message : 'Unable to load team members.');
     } finally {
-      setIsLoading(false);
+      if (scope === scopeRef.current) setIsLoading(false);
     }
-  };
+  }, [getMembers, getInvitations, canManageMembers]);
 
-  const resetInviteModal = () => {
+  useEffect(() => {
+    scopeRef.current++;
+    setMembers([]);
+    setPendingInvitations([]);
     setShowInviteModal(false);
-    setInviteStep('details');
     setInviteEmail('');
     setInviteRole('member');
-    setSectionAccess(DEFAULT_SECTION_ACCESS.member);
-    setShowEmailPreview(false);
-    setCustomMessage('');
+    setInviteError(null);
+    setIsInviting(false);
+    setBusyId(null);
+    setMemberPage(0);
+    setInvitationPage(0);
+    if (currentTenant) void loadMembers();
+    else setIsLoading(false);
+    return () => { scopeRef.current++; };
+  }, [currentTenant?.id, user?.id, loadMembers]);
+
+  const storeInvitation = (invitation: TenantInvitation) => {
+    setPendingInvitations(previous => [invitation, ...previous.filter(item => item.id !== invitation.id)]);
+    setInvitationPage(0);
+    const failed = invitation.deliveryStatus === 'failed';
+    const queued = invitation.deliveryStatus === 'queued';
+    showToast(failed ? 'error' : 'success', failed
+      ? invitation.deliveryMessage || (isEn ? 'Email delivery failed. The invitation is still pending; copy the link to share it.' : 'La livraison a échoué. L’invitation reste en attente; copiez le lien pour la partager.')
+      : queued ? (isEn ? 'Invitation queued for email delivery.' : 'Invitation en attente de livraison par courriel.')
+      : (isEn ? 'Invitation link ready. Copy the link below to share it.' : 'Lien d’invitation prêt. Copiez le lien ci-dessous pour le partager.'));
   };
 
-  const handleInvite = async () => {
-    if (!inviteEmail.trim()) return;
-    
+  const handleInvite = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const email = inviteEmail.trim();
+    if (!email || isInviting) return;
+    const scope = scopeRef.current;
     setIsInviting(true);
+    setInviteError(null);
     try {
-      const invitation = await inviteMember(inviteEmail.trim(), inviteRole);
-      
-      // Generate email (in production, this would be sent server-side)
-      const emailHtml = generateInvitationEmail({
-        inviterName: 'Admin User', // In production, get from auth
-        inviterEmail: 'admin@plainledger.ca',
-        organizationName: currentTenant?.name || 'Your Organization',
-        recipientEmail: inviteEmail.trim(),
-        role: inviteRole,
-        inviteUrl: `${window.location.origin}/invite/${invitation.id}`,
-        expiresAt: invitation.expiresAt,
-        sectionAccess,
-        customMessage: customMessage || undefined,
-      }, language);
-      
-      console.log('Generated email HTML:', emailHtml);
-      
-      resetInviteModal();
-      await loadMembers();
-      
-      showToast({
-        type: 'success',
-        title: isEn ? 'Invitation sent' : 'Invitation envoyée',
-        message: isEn 
-          ? `An invitation has been sent to ${inviteEmail}`
-          : `Une invitation a été envoyée à ${inviteEmail}`,
-      });
+      const invitation = await inviteMember(email, inviteRole);
+      if (scope !== scopeRef.current) return;
+      storeInvitation(invitation);
+      setShowInviteModal(false);
+      setInviteEmail('');
+      setInviteRole('member');
     } catch (error) {
-      showToast({
-        type: 'error',
-        title: isEn ? 'Error' : 'Erreur',
-        message: isEn 
-          ? 'Unable to send invitation.'
-          : 'Impossible d\'envoyer l\'invitation.',
-      });
+      if (scope === scopeRef.current) setInviteError(errorMessage(error));
     } finally {
-      setIsInviting(false);
+      if (scope === scopeRef.current) setIsInviting(false);
     }
   };
 
-  const handleResendInvitation = async (invitationId: string, email: string) => {
+  const handleResend = async (invitationId: string) => {
+    const scope = scopeRef.current;
+    setBusyId(invitationId);
     try {
-      await resendInvitation(invitationId);
-      showToast({
-        type: 'success',
-        title: isEn ? 'Invitation resent' : 'Invitation renvoyée',
-        message: isEn 
-          ? `Invitation resent to ${email}`
-          : `Invitation renvoyée à ${email}`,
-      });
+      const invitation = await resendInvitation(invitationId);
+      if (scope === scopeRef.current) storeInvitation(invitation);
     } catch (error) {
-      showToast({
-        type: 'error',
-        title: isEn ? 'Error' : 'Erreur',
-        message: isEn ? 'Unable to resend invitation.' : 'Impossible de renvoyer l\'invitation.',
-      });
+      if (scope === scopeRef.current) showToast('error', errorMessage(error));
+    } finally {
+      if (scope === scopeRef.current) setBusyId(null);
     }
   };
 
-  const handleRevokeInvitation = async (invitationId: string) => {
-    if (!confirm(isEn ? 'Revoke this invitation?' : 'Révoquer cette invitation ?')) return;
-    
+  const copyInvitation = async (invitation: TenantInvitation) => {
+    if (!invitation.inviteUrl) return;
+    try {
+      await navigator.clipboard.writeText(invitation.inviteUrl);
+      showToast('success', isEn ? 'Invitation link copied.' : 'Lien d’invitation copié.');
+    } catch {
+      showToast('error', isEn ? 'Clipboard access failed. Select and copy the link below.' : 'Accès au presse-papiers refusé. Sélectionnez et copiez le lien ci-dessous.');
+    }
+  };
+
+  const handleRevoke = async (invitationId: string) => {
+    const scope = scopeRef.current;
+    setBusyId(invitationId);
     try {
       await revokeInvitation(invitationId);
-      setPendingInvitations(prev => prev.filter(inv => inv.id !== invitationId));
-      showToast({
-        type: 'success',
-        title: isEn ? 'Invitation revoked' : 'Invitation révoquée',
-      });
+      if (scope !== scopeRef.current) return;
+      setPendingInvitations(previous => previous.filter(item => item.id !== invitationId));
+      showToast('success', isEn ? 'Invitation revoked.' : 'Invitation révoquée.');
     } catch (error) {
-      showToast({
-        type: 'error',
-        title: isEn ? 'Error' : 'Erreur',
-        message: isEn ? 'Unable to revoke invitation.' : 'Impossible de révoquer l\'invitation.',
-      });
+      if (scope === scopeRef.current) showToast('error', errorMessage(error));
+    } finally {
+      if (scope === scopeRef.current) setBusyId(null);
     }
   };
 
-  const toggleSection = (sectionId: keyof SectionAccess) => {
-    setSectionAccess(prev => ({
-      ...prev,
-      [sectionId]: !prev[sectionId],
-    }));
+  const changeRole = async (memberId: string, role: EditableMemberRole) => {
+    const scope = scopeRef.current;
+    setBusyId(memberId);
+    try {
+      await updateMemberRole(memberId, role);
+      if (scope !== scopeRef.current) return;
+      setMembers(previous => previous.map(member => member.id === memberId ? { ...member, role } : member));
+      showToast('success', isEn ? 'Member role updated.' : 'Rôle du membre mis à jour.');
+    } catch (error) {
+      if (scope === scopeRef.current) showToast('error', errorMessage(error));
+    } finally {
+      if (scope === scopeRef.current) setBusyId(null);
+    }
   };
 
-  const handleRemoveMember = async (memberId: string, memberName: string) => {
-    if (!confirm(`Êtes-vous sûr de vouloir retirer ${memberName} de l'organisation?`)) {
-      return;
-    }
-    
+  const handleRemove = async (memberId: string, name: string) => {
+    if (!window.confirm(isEn ? `Remove ${name} from this organization?` : `Retirer ${name} de cette organisation ?`)) return;
+    const scope = scopeRef.current;
+    setBusyId(memberId);
     try {
       await removeMember(memberId);
-      setMembers(prev => prev.filter(m => m.id !== memberId));
-      
-      showToast({
-        type: 'success',
-        title: 'Membre retiré',
-        message: `${memberName} a été retiré de l'organisation.`,
-      });
+      if (scope !== scopeRef.current) return;
+      setMembers(previous => previous.filter(member => member.id !== memberId));
+      showToast('success', isEn ? 'Member removed.' : 'Membre retiré.');
     } catch (error) {
-      showToast({
-        type: 'error',
-        title: 'Erreur',
-        message: 'Impossible de retirer le membre.',
-      });
+      if (scope === scopeRef.current) showToast('error', errorMessage(error));
+    } finally {
+      if (scope === scopeRef.current) setBusyId(null);
     }
   };
 
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case 'owner': return Crown;
-      case 'admin': return Shield;
-      case 'member': return User;
-      case 'viewer': return Eye;
-      default: return User;
-    }
-  };
+  const roleLabel = (role: 'owner' | EditableMemberRole) => ROLE_DEFINITIONS[role]?.[isEn ? 'nameEn' : 'nameFr'] || role;
+  const roles = (['admin', 'member', 'viewer'] as const).map(role => <option key={role} value={role}>{roleLabel(role)}</option>);
+  const paginate = (count: number, page: number, setPage: (page: number) => void, label: string) => count > MEMBER_PAGE_SIZE && (
+    <nav aria-label={label} className="flex flex-wrap items-center justify-end gap-3 text-sm">
+      <button className="btn-secondary btn-sm" disabled={page === 0} onClick={() => setPage(page - 1)}>{isEn ? 'Previous' : 'Précédent'}</button>
+      <span>{Math.min(page * MEMBER_PAGE_SIZE + 1, count)}–{Math.min((page + 1) * MEMBER_PAGE_SIZE, count)} / {count}</span>
+      <button className="btn-secondary btn-sm" disabled={(page + 1) * MEMBER_PAGE_SIZE >= count} onClick={() => setPage(page + 1)}>{isEn ? 'Next' : 'Suivant'}</button>
+    </nav>
+  );
+  const safeMemberPage = Math.min(memberPage, Math.max(0, Math.ceil(members.length / MEMBER_PAGE_SIZE) - 1));
+  const safeInvitationPage = Math.min(invitationPage, Math.max(0, Math.ceil(pendingInvitations.length / MEMBER_PAGE_SIZE) - 1));
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="w-6 h-6 animate-spin" style={{ color: 'rgb(var(--color-text-muted))' }} />
-      </div>
-    );
-  }
-
+  if (!currentTenant) return <p role="status">{isEn ? 'Select an organization to view its team.' : 'Sélectionnez une organisation pour afficher son équipe.'}</p>;
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="section-title">{isEn ? 'Team Members' : 'Membres de l\'équipe'}</h3>
-          <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            {members.length} {isEn ? 'member' : 'membre'}{members.length > 1 ? 's' : ''} • {isEn ? 'Limit' : 'Limite'}: {currentTenant?.limits.users === -1 ? (isEn ? 'Unlimited' : 'Illimité') : currentTenant?.limits.users}
-          </p>
-        </div>
-        {canManageMembers && (
-          <button
-            onClick={() => setShowInviteModal(true)}
-            className="btn-primary flex items-center gap-2"
-          >
-            <Mail className="w-4 h-4" />
-            {isEn ? 'Invite' : 'Inviter'}
-          </button>
-        )}
+    <section className="min-w-0 space-y-4" aria-label={isEn ? 'Team members' : 'Membres de l’équipe'}>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div><h3 className="section-title">{isEn ? 'Team Members' : 'Membres de l’équipe'}</h3>
+          <p className="text-sm text-muted">{members.length} {isEn ? 'members' : 'membres'}</p></div>
+        {canManageMembers && <button className="btn-primary flex items-center gap-2" onClick={() => { setInviteError(null); setShowInviteModal(true); }}><Mail className="h-4 w-4" />{isEn ? 'Invite' : 'Inviter'}</button>}
       </div>
-
-      {/* Role info hint */}
-      <p 
-        className="text-xs mb-4"
-        style={{ color: 'rgb(var(--color-text-muted))' }}
-      >
-        {isEn 
-          ? 'Manage permissions and create custom groups in '
-          : 'Gérez les permissions et créez des groupes personnalisés dans '}
-        <a 
-          href="/app/settings" 
-          onClick={(e) => {
-            e.preventDefault();
-            // Navigate to roles tab via Settings
-            window.location.href = '/app/settings?tab=roles';
-          }}
-          className="font-medium underline-offset-2 hover:underline"
-          style={{ color: 'rgb(var(--color-interactive))' }}
-        >
-          {isEn ? 'Roles & Access' : 'Rôles & Accès'}
-        </a>
-      </p>
-
-      {/* Pending Invitations */}
-      {pendingInvitations.length > 0 && canManageMembers && (
-        <div className="space-y-2">
-          <h4 
-            className="text-xs font-medium uppercase tracking-wide"
-            style={{ color: 'rgb(var(--color-text-muted))' }}
-          >
-            {isEn ? 'Pending Invitations' : 'Invitations en attente'} ({pendingInvitations.length})
-          </h4>
-          {pendingInvitations.map((invitation) => (
-            <div
-              key={invitation.id}
-              className="flex items-center justify-between p-3 rounded-lg"
-              style={{ 
-                backgroundColor: 'rgb(var(--color-warning) / 0.05)',
-                border: '1px solid rgb(var(--color-warning) / 0.2)'
-              }}
-            >
-              <div className="flex items-center gap-3">
-                <div 
-                  className="w-9 h-9 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: 'rgb(var(--color-warning) / 0.1)' }}
-                >
-                  <Mail className="w-4 h-4" style={{ color: 'rgb(var(--color-warning))' }} />
-                </div>
-                <div>
-                  <p className="font-medium text-sm" style={{ color: 'rgb(var(--color-text))' }}>
-                    {invitation.email}
-                  </p>
-                  <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                    {isEn ? 'Invited as' : 'Invité en tant que'} {ROLE_DEFINITIONS[invitation.role as keyof typeof ROLE_DEFINITIONS]?.[isEn ? 'nameEn' : 'nameFr']}
-                    {' • '}
-                    {isEn ? 'Expires' : 'Expire'} {new Date(invitation.expiresAt).toLocaleDateString(isEn ? 'en-CA' : 'fr-CA')}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handleResendInvitation(invitation.id, invitation.email)}
-                  className="btn-secondary btn-sm"
-                >
-                  {isEn ? 'Resend' : 'Renvoyer'}
-                </button>
-                <button
-                  onClick={() => handleRevokeInvitation(invitation.id)}
-                  className="p-2 rounded-lg transition-colors"
-                  style={{ color: 'rgb(var(--color-error))' }}
-                  title={isEn ? 'Revoke' : 'Révoquer'}
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Members list */}
-      <div className="space-y-2">
-        {members.map((member) => {
-          const RoleIcon = getRoleIcon(member.role);
-          const canEdit = canManageMembers && member.role !== 'owner';
-          const roleInfo = ROLE_DEFINITIONS[member.role as keyof typeof ROLE_DEFINITIONS];
-          
-          // Determine role color - using app's primary green palette
-          const roleColors: Record<string, { bg: string; text: string; border: string }> = {
-            owner: { bg: 'rgb(var(--color-accent-500) / 0.1)', text: 'rgb(var(--color-accent-600))', border: 'rgb(var(--color-accent-500) / 0.3)' },
-            admin: { bg: 'rgb(var(--color-primary-500) / 0.1)', text: 'rgb(var(--color-primary-600))', border: 'rgb(var(--color-primary-500) / 0.3)' },
-            member: { bg: 'rgb(var(--color-primary-100))', text: 'rgb(var(--color-primary-700))', border: 'rgb(var(--color-primary-200))' },
-            viewer: { bg: 'rgb(var(--color-bg-muted))', text: 'rgb(var(--color-text-muted))', border: 'rgb(var(--color-border))' },
-          };
-          const colors = roleColors[member.role] || roleColors.viewer;
-          
-          return (
-            <div
-              key={member.id}
-              className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:p-4 rounded-lg transition-colors"
-              style={{ 
-                backgroundColor: 'rgb(var(--color-surface))',
-                border: '1px solid rgb(var(--color-border))'
-              }}
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div 
-                  className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center font-semibold text-base sm:text-lg flex-shrink-0"
-                  style={{ 
-                    backgroundColor: 'rgb(var(--color-primary-500) / 0.15)',
-                    color: 'rgb(var(--color-primary-500))'
-                  }}
-                >
-                  {member.name.charAt(0).toUpperCase()}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold truncate" style={{ color: 'rgb(var(--color-text))' }}>
-                      {member.name}
-                    </span>
-                    <div 
-                      className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0"
-                      style={{ 
-                        backgroundColor: colors.bg,
-                        color: colors.text,
-                        border: `1px solid ${colors.border}`
-                      }}
-                      title={roleInfo?.descFr || ''}
-                    >
-                      <RoleIcon className="w-3 h-3" />
-                      <span className="hidden xs:inline">
-                        {member.role === 'owner' ? (isEn ? 'Owner' : 'Propriétaire') :
-                         member.role === 'admin' ? (isEn ? 'Admin' : 'Admin') :
-                         member.role === 'member' ? (isEn ? 'Member' : 'Membre') : (isEn ? 'Viewer' : 'Lecteur')}
-                      </span>
-                    </div>
-                  </div>
-                  <p className="text-sm truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                    {member.email}
-                  </p>
-                </div>
-              </div>
-              
-              {canEdit && (
-                <div className="flex items-center gap-2 self-end sm:self-auto flex-shrink-0">
-                  <RoleDropdown
-                    value={member.role as 'admin' | 'member' | 'viewer'}
-                    onChange={(role) => updateMemberRole(member.id, role)}
-                  />
-                  <button
-                    onClick={() => handleRemoveMember(member.id, member.name)}
-                    className="p-2 rounded-lg transition-colors hover:bg-[rgb(var(--color-error)/0.1)]"
-                    style={{ color: 'rgb(var(--color-error))' }}
-                    title={isEn ? 'Remove member' : 'Retirer le membre'}
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Enhanced Invite Modal */}
-      {showInviteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div 
-            className="w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
-            style={{ backgroundColor: 'rgb(var(--color-surface))' }}
-          >
-            {/* Header with steps */}
-            <div 
-              className="px-6 py-4 border-b flex-shrink-0"
-              style={{ borderColor: 'rgb(var(--color-border))' }}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-lg font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-                  {isEn ? 'Invite Team Member' : 'Inviter un membre'}
-                </h3>
-                <button 
-                  onClick={resetInviteModal}
-                  className="icon-btn"
-                  style={{ color: 'rgb(var(--color-text-muted))' }}
-                >
-                  ×
-                </button>
-              </div>
-              
-              {/* Step indicators */}
-              <div className="flex items-center gap-2">
-                {[
-                  { id: 'details', label: isEn ? 'Details' : 'Détails' },
-                  { id: 'access', label: isEn ? 'Access' : 'Accès' },
-                  { id: 'preview', label: isEn ? 'Preview' : 'Aperçu' },
-                ].map((step, index) => (
-                  <div key={step.id} className="flex items-center">
-                    <button
-                      onClick={() => {
-                        if (step.id === 'details' || (step.id === 'access' && inviteEmail.trim()) || (step.id === 'preview' && inviteEmail.trim())) {
-                          setInviteStep(step.id as typeof inviteStep);
-                        }
-                      }}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                        inviteStep === step.id ? '' : 'opacity-60'
-                      }`}
-                      style={{
-                        backgroundColor: inviteStep === step.id ? 'rgb(var(--color-primary-500) / 0.15)' : 'transparent',
-                        color: inviteStep === step.id ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-muted))',
-                      }}
-                    >
-                      <span 
-                        className="w-5 h-5 rounded-full flex items-center justify-center text-xs"
-                        style={{
-                          backgroundColor: inviteStep === step.id ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-bg-muted))',
-                          color: inviteStep === step.id ? 'white' : 'rgb(var(--color-text-muted))',
-                        }}
-                      >
-                        {index + 1}
-                      </span>
-                      {step.label}
-                    </button>
-                    {index < 2 && (
-                      <ChevronRight className="w-4 h-4 mx-1" style={{ color: 'rgb(var(--color-text-subtle))' }} />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-            
-            {/* Step content */}
-            <div className="p-6 overflow-y-auto flex-1">
-              {/* Step 1: Details */}
-              {inviteStep === 'details' && (
-                <div className="space-y-5">
-                  <div>
-                    <label className="label">
-                      <Mail className="w-4 h-4 inline mr-2" />
-                      {isEn ? 'Email address' : 'Adresse e-mail'}
-                    </label>
-                    <input
-                      type="email"
-                      className="input"
-                      placeholder={isEn ? 'colleague@example.com' : 'collegue@exemple.com'}
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                      autoFocus
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="label mb-3">
-                      {isEn ? 'Select a role' : 'Sélectionner un rôle'}
-                    </label>
-                    <RoleSelector
-                      value={inviteRole}
-                      onChange={(role) => setInviteRole(role as 'admin' | 'member' | 'viewer')}
-                      excludeOwner={true}
-                      showDescriptions={true}
-                    />
-                  </div>
-
-                  {inviteRole === 'admin' && (
-                    <div 
-                      className="p-3 rounded-lg flex items-start gap-2"
-                      style={{ 
-                        backgroundColor: 'rgb(var(--color-info) / 0.1)',
-                        border: '1px solid rgb(var(--color-info) / 0.2)'
-                      }}
-                    >
-                      <Database className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'rgb(var(--color-info))' }} />
-                      <p className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                        {isEn 
-                          ? 'Administrators can connect accounting systems (QuickBooks, Xero, etc.) and sync data.'
-                          : 'Les administrateurs peuvent connecter des systèmes comptables (QuickBooks, Xero, etc.) et synchroniser les données.'}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Step 2: Section Access */}
-              {inviteStep === 'access' && (
-                <div className="space-y-4">
-                  <div 
-                    className="p-3 rounded-lg flex items-start gap-2 mb-4"
-                    style={{ 
-                      backgroundColor: 'rgb(var(--color-bg-subtle))',
-                      border: '1px solid rgb(var(--color-border))'
-                    }}
-                  >
-                    <Info className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                    <p className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                      {isEn 
-                        ? 'Customize which sections this user can access. Unchecked sections will be hidden from their view.'
-                        : 'Personnalisez les sections auxquelles cet utilisateur peut accéder. Les sections non cochées seront masquées.'}
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {SECTION_DEFINITIONS.map((section) => {
-                      const Icon = section.icon;
-                      const isEnabled = sectionAccess[section.id];
-                      const isDisabled = section.adminOnly && inviteRole !== 'admin';
-                      
-                      return (
-                        <button
-                          key={section.id}
-                          onClick={() => !isDisabled && toggleSection(section.id)}
-                          disabled={isDisabled}
-                          className={`p-3 rounded-lg border text-left transition-all ${
-                            isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                          }`}
-                          style={{
-                            backgroundColor: isEnabled ? 'rgb(var(--color-success) / 0.05)' : 'rgb(var(--color-surface))',
-                            borderColor: isEnabled ? 'rgb(var(--color-success) / 0.3)' : 'rgb(var(--color-border))',
-                          }}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div 
-                              className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0"
-                              style={{ 
-                                backgroundColor: isEnabled ? 'rgb(var(--color-success) / 0.1)' : 'rgb(var(--color-bg-muted))',
-                                color: isEnabled ? 'rgb(var(--color-success))' : 'rgb(var(--color-text-muted))'
-                              }}
-                            >
-                              <Icon className="w-4 h-4" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span 
-                                  className="font-medium text-sm"
-                                  style={{ color: 'rgb(var(--color-text))' }}
-                                >
-                                  {isEn ? section.nameEn : section.nameFr}
-                                </span>
-                                {section.adminOnly && (
-                                  <span 
-                                    className="text-[10px] px-1.5 py-0.5 rounded"
-                                    style={{ 
-                                      backgroundColor: 'rgb(var(--color-warning) / 0.1)',
-                                      color: 'rgb(var(--color-warning))'
-                                    }}
-                                  >
-                                    Admin
-                                  </span>
-                                )}
-                              </div>
-                              <p 
-                                className="text-xs mt-0.5"
-                                style={{ color: 'rgb(var(--color-text-muted))' }}
-                              >
-                                {isEn ? section.descEn : section.descFr}
-                              </p>
-                            </div>
-                            <div 
-                              className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
-                                isEnabled ? 'border-transparent' : ''
-                              }`}
-                              style={{
-                                backgroundColor: isEnabled ? 'rgb(var(--color-success))' : 'transparent',
-                                borderColor: isEnabled ? 'rgb(var(--color-success))' : 'rgb(var(--color-border-strong))',
-                              }}
-                            >
-                              {isEnabled && <Check className="w-3 h-3 text-white" />}
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Step 3: Preview */}
-              {inviteStep === 'preview' && (
-                <div className="space-y-5">
-                  {/* Summary - Clean layout without gray background */}
-                  <div>
-                    <h4 className="font-medium mb-3" style={{ color: 'rgb(var(--color-text))' }}>
-                      {isEn ? 'Invitation Summary' : 'Résumé de l\'invitation'}
-                    </h4>
-                    <div className="space-y-3 text-sm">
-                      <div 
-                        className="flex justify-between items-center py-2"
-                        style={{ borderBottom: '1px solid rgb(var(--color-border-subtle))' }}
-                      >
-                        <span style={{ color: 'rgb(var(--color-text-muted))' }}>
-                          {isEn ? 'Email' : 'Courriel'}
-                        </span>
-                        <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-                          {inviteEmail}
-                        </span>
-                      </div>
-                      <div 
-                        className="flex justify-between items-center py-2"
-                        style={{ borderBottom: '1px solid rgb(var(--color-border-subtle))' }}
-                      >
-                        <span style={{ color: 'rgb(var(--color-text-muted))' }}>
-                          {isEn ? 'Role' : 'Rôle'}
-                        </span>
-                        <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-                          {ROLE_DEFINITIONS[inviteRole]?.[isEn ? 'nameEn' : 'nameFr']}
-                        </span>
-                      </div>
-                      <div 
-                        className="flex justify-between items-center py-2"
-                        style={{ borderBottom: '1px solid rgb(var(--color-border-subtle))' }}
-                      >
-                        <span style={{ color: 'rgb(var(--color-text-muted))' }}>
-                          {isEn ? 'Organization' : 'Organisation'}
-                        </span>
-                        <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-                          {currentTenant?.name}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Section access summary */}
-                  <div>
-                    <h4 className="font-medium mb-2" style={{ color: 'rgb(var(--color-text))' }}>
-                      {isEn ? 'Section Access' : 'Accès aux sections'}
-                    </h4>
-                    <div className="flex flex-wrap gap-2">
-                      {SECTION_DEFINITIONS
-                        .filter(section => sectionAccess[section.id])
-                        .map(section => (
-                          <span 
-                            key={section.id}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium"
-                            style={{ 
-                              backgroundColor: 'rgb(var(--color-success) / 0.1)',
-                              color: 'rgb(var(--color-success))'
-                            }}
-                          >
-                            <Check className="w-3 h-3" />
-                            {isEn ? section.nameEn : section.nameFr}
-                          </span>
-                        ))}
-                    </div>
-                  </div>
-
-                  {/* Invitation Link Preview */}
-                  <div>
-                    <h4 className="font-medium mb-2" style={{ color: 'rgb(var(--color-text))' }}>
-                      {isEn ? 'Invitation Link' : 'Lien d\'invitation'}
-                    </h4>
-                    <div 
-                      className="flex items-center gap-2 p-3 rounded-lg"
-                      style={{ 
-                        backgroundColor: 'rgb(var(--color-primary-500) / 0.05)',
-                        border: '1px solid rgb(var(--color-primary-500) / 0.2)'
-                      }}
-                    >
-                      <Link2 className="w-4 h-4 flex-shrink-0" style={{ color: 'rgb(var(--color-primary-600))' }} />
-                      <code 
-                        className="flex-1 text-xs truncate font-mono"
-                        style={{ color: 'rgb(var(--color-primary-700))' }}
-                      >
-                        {`${window.location.origin}/invite/${currentTenant?.slug || 'org'}?token=xxxxx`}
-                      </code>
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(`${window.location.origin}/invite/${currentTenant?.slug || 'org'}?token=preview`);
-                          showToast({
-                            type: 'success',
-                            title: isEn ? 'Link copied!' : 'Lien copié !',
-                          });
-                        }}
-                        className="flex-shrink-0 p-1.5 rounded hover:bg-[rgb(var(--color-primary-500)/0.1)] transition-colors"
-                        title={isEn ? 'Copy link' : 'Copier le lien'}
-                      >
-                        <Copy className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-600))' }} />
-                      </button>
-                    </div>
-                    <p className="text-xs mt-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                      {isEn 
-                        ? 'This link will be included in the invitation email and expires in 7 days.'
-                        : 'Ce lien sera inclus dans le courriel d\'invitation et expire dans 7 jours.'}
-                    </p>
-                  </div>
-
-                  {/* Custom Message (optional) */}
-                  <div>
-                    <h4 className="font-medium mb-2" style={{ color: 'rgb(var(--color-text))' }}>
-                      {isEn ? 'Personal Message' : 'Message personnalisé'}
-                      <span className="text-xs font-normal ml-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                        ({isEn ? 'optional' : 'optionnel'})
-                      </span>
-                    </h4>
-                    <textarea
-                      value={customMessage}
-                      onChange={(e) => setCustomMessage(e.target.value)}
-                      placeholder={isEn 
-                        ? 'Add a personal note to your invitation...'
-                        : 'Ajoutez une note personnelle à votre invitation...'}
-                      className="input w-full resize-none"
-                      rows={3}
-                      maxLength={500}
-                    />
-                    <p className="text-xs mt-1 text-right" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                      {customMessage.length}/500
-                    </p>
-                  </div>
-
-                  {/* Email preview toggle */}
-                  <div>
-                    <button
-                      onClick={() => setShowEmailPreview(!showEmailPreview)}
-                      className="flex items-center gap-2 text-sm font-medium"
-                      style={{ color: 'rgb(var(--color-interactive))' }}
-                    >
-                      <Mail className="w-4 h-4" />
-                      {showEmailPreview 
-                        ? (isEn ? 'Hide email preview' : 'Masquer l\'aperçu')
-                        : (isEn ? 'Preview invitation email' : 'Aperçu du courriel')}
-                      <ChevronDown className={`w-4 h-4 transition-transform ${showEmailPreview ? 'rotate-180' : ''}`} />
-                    </button>
-                    
-                    {showEmailPreview && (
-                      <div 
-                        className="mt-3 rounded-lg overflow-hidden"
-                        style={{ border: '1px solid rgb(var(--color-border))' }}
-                      >
-                        <div 
-                          className="px-3 py-2 flex items-center justify-between"
-                          style={{ 
-                            borderBottom: '1px solid rgb(var(--color-border))',
-                            backgroundColor: 'rgb(var(--color-bg-subtle))'
-                          }}
-                        >
-                          <span className="text-xs font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                            {isEn ? 'Email Preview' : 'Aperçu du courriel'}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => {
-                                const emailHtml = generateInvitationEmail({
-                                  inviterName: 'Admin User',
-                                  inviterEmail: 'admin@plainledger.ca',
-                                  organizationName: currentTenant?.name || '',
-                                  recipientEmail: inviteEmail,
-                                  role: inviteRole,
-                                  inviteUrl: `${window.location.origin}/invite/${currentTenant?.slug || 'org'}?token=preview`,
-                                  expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-                                  sectionAccess,
-                                  customMessage: customMessage || undefined,
-                                }, language);
-                                navigator.clipboard.writeText(emailHtml);
-                                showToast({
-                                  type: 'success',
-                                  title: isEn ? 'HTML Copied!' : 'HTML copié !',
-                                  message: isEn ? 'Email HTML copied to clipboard' : 'HTML du courriel copié dans le presse-papiers',
-                                });
-                              }}
-                              className="text-xs flex items-center gap-1 px-2 py-1 rounded hover:bg-white/50 transition-colors"
-                              style={{ color: 'rgb(var(--color-interactive))' }}
-                              title={isEn ? 'Copy HTML' : 'Copier le HTML'}
-                            >
-                              <Copy className="w-3 h-3" />
-                              HTML
-                            </button>
-                            <button
-                              onClick={() => {
-                                const emailText = generateInvitationEmailText({
-                                  inviterName: 'Admin User',
-                                  inviterEmail: 'admin@plainledger.ca',
-                                  organizationName: currentTenant?.name || '',
-                                  recipientEmail: inviteEmail,
-                                  role: inviteRole,
-                                  inviteUrl: `${window.location.origin}/invite/${currentTenant?.slug || 'org'}?token=preview`,
-                                  expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-                                  sectionAccess,
-                                  customMessage: customMessage || undefined,
-                                }, language);
-                                navigator.clipboard.writeText(emailText);
-                                showToast({
-                                  type: 'success',
-                                  title: isEn ? 'Text Copied!' : 'Texte copié !',
-                                  message: isEn ? 'Plain text version copied' : 'Version texte copiée',
-                                });
-                              }}
-                              className="text-xs flex items-center gap-1 px-2 py-1 rounded hover:bg-white/50 transition-colors"
-                              style={{ color: 'rgb(var(--color-interactive))' }}
-                              title={isEn ? 'Copy plain text' : 'Copier le texte'}
-                            >
-                              <Copy className="w-3 h-3" />
-                              {isEn ? 'Text' : 'Texte'}
-                            </button>
-                          </div>
-                        </div>
-                        <div 
-                          className="relative"
-                          style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
-                        >
-                          <div 
-                            className="overflow-auto"
-                            style={{ 
-                              maxHeight: '500px',
-                              backgroundColor: '#f8fafc'
-                            }}
-                          >
-                            <iframe
-                              srcDoc={generateInvitationEmail({
-                                inviterName: 'Admin User',
-                                inviterEmail: 'admin@plainledger.ca',
-                                organizationName: currentTenant?.name || '',
-                                recipientEmail: inviteEmail,
-                                role: inviteRole,
-                                inviteUrl: `${window.location.origin}/invite/${currentTenant?.slug || 'org'}?token=preview`,
-                                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-                                sectionAccess,
-                                customMessage: customMessage || undefined,
-                              }, language)}
-                              className="w-full border-0"
-                              style={{ 
-                                minHeight: '400px',
-                                backgroundColor: '#f8fafc'
-                              }}
-                              title={isEn ? 'Email Preview' : 'Aperçu du courriel'}
-                            />
-                          </div>
-                          <div 
-                            className="px-3 py-2 text-xs"
-                            style={{ 
-                              borderTop: '1px solid rgb(var(--color-border))',
-                              backgroundColor: 'rgb(var(--color-surface))',
-                              color: 'rgb(var(--color-text-muted))'
-                            }}
-                          >
-                            <p className="mb-1">
-                              <strong>{isEn ? 'To:' : 'À :'}</strong> {inviteEmail || 'collegue@exemple.com'}
-                            </p>
-                            <p>
-                              <strong>{isEn ? 'Subject:' : 'Objet :'}</strong> {isEn ? 'You\'re invited to join ' : 'Invitation à rejoindre '}{currentTenant?.name || 'Your Organization'}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            {/* Footer */}
-            <div 
-              className="px-6 py-4 border-t flex justify-between flex-shrink-0"
-              style={{ 
-                borderColor: 'rgb(var(--color-border))',
-                backgroundColor: 'rgb(var(--color-bg-subtle))'
-              }}
-            >
-              <button
-                onClick={() => {
-                  if (inviteStep === 'access') setInviteStep('details');
-                  else if (inviteStep === 'preview') setInviteStep('access');
-                  else resetInviteModal();
-                }}
-                className="btn-secondary"
-                disabled={isInviting}
-              >
-                {inviteStep === 'details' 
-                  ? (isEn ? 'Cancel' : 'Annuler')
-                  : (isEn ? 'Back' : 'Retour')}
-              </button>
-              
-              <button
-                onClick={() => {
-                  if (inviteStep === 'details') setInviteStep('access');
-                  else if (inviteStep === 'access') setInviteStep('preview');
-                  else handleInvite();
-                }}
-                className="btn-primary flex items-center gap-2"
-                disabled={!inviteEmail.trim() || isInviting}
-              >
-                {isInviting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    {isEn ? 'Sending...' : 'Envoi...'}
-                  </>
-                ) : inviteStep === 'preview' ? (
-                  <>
-                    <Mail className="w-4 h-4" />
-                    {isEn ? 'Send Invitation' : 'Envoyer l\'invitation'}
-                  </>
-                ) : (
-                  <>
-                    {isEn ? 'Next' : 'Suivant'}
-                    <ChevronRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
+      {isLoading && <p role="status" className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />{isEn ? 'Loading team…' : 'Chargement de l’équipe…'}</p>}
+      {loadError && <div role="alert" className="rounded-lg border border-red-300 p-3"><p>{loadError}</p><button className="btn-secondary mt-2" onClick={() => void loadMembers()}>{isEn ? 'Retry' : 'Réessayer'}</button></div>}
+      {canManageMembers && pendingInvitations.length > 0 && <div className="space-y-3">
+        <h4 className="font-medium">{isEn ? 'Pending invitations' : 'Invitations en attente'} ({pendingInvitations.length})</h4>
+        {pendingInvitations.slice(safeInvitationPage * MEMBER_PAGE_SIZE, (safeInvitationPage + 1) * MEMBER_PAGE_SIZE).map(invitation => <article key={invitation.id} className="min-w-0 rounded-lg border p-3 space-y-2" style={{ borderColor: 'rgb(var(--color-border))' }}>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0"><p className="break-all font-medium">{invitation.email}</p><p className="text-xs text-muted">{roleLabel(invitation.role)} · {isEn ? 'Expires' : 'Expire'} {new Date(invitation.expiresAt).toLocaleDateString(isEn ? 'en-CA' : 'fr-CA')}</p></div>
+            <div className="flex flex-wrap gap-2">
+              {invitation.inviteUrl && <button className="btn-secondary btn-sm flex items-center gap-1" onClick={() => void copyInvitation(invitation)}><Copy className="h-3 w-3" />{isEn ? 'Copy link' : 'Copier le lien'}</button>}
+              <button className="btn-secondary btn-sm" disabled={busyId !== null} onClick={() => void handleResend(invitation.id)}>{busyId === invitation.id ? (isEn ? 'Updating…' : 'Mise à jour…') : (isEn ? 'Create new link' : 'Créer un nouveau lien')}</button>
+              <button className="btn-secondary btn-sm" disabled={busyId !== null} onClick={() => void handleRevoke(invitation.id)}>{isEn ? 'Revoke' : 'Révoquer'}</button>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+          <p role={invitation.deliveryStatus === 'failed' ? 'alert' : undefined} className="text-sm">{invitation.deliveryStatus === 'failed'
+            ? invitation.deliveryMessage || (isEn ? 'Email delivery failed. This invitation is still pending.' : 'La livraison a échoué. Cette invitation reste en attente.')
+            : invitation.deliveryStatus === 'queued' ? (isEn ? 'Email delivery is queued.' : 'La livraison par courriel est en attente.')
+            : invitation.deliveryStatus === 'unsent' ? (isEn ? 'Email has not been sent. Share the invitation link.' : 'Aucun courriel envoyé. Partagez le lien d’invitation.')
+            : (isEn ? 'Delivery status is unavailable.' : 'Le statut de livraison est indisponible.')}</p>
+          {invitation.inviteUrl && <input aria-label={`${isEn ? 'Invitation link for' : 'Lien d’invitation pour'} ${invitation.email}`} readOnly value={invitation.inviteUrl} onFocus={event => event.currentTarget.select()} className="input w-full min-w-0 text-xs" />}
+          <p className="text-xs text-muted">{isEn ? 'Creating a new link invalidates the previous link.' : 'Un nouveau lien invalide le lien précédent.'}</p>
+        </article>)}
+        {paginate(pendingInvitations.length, safeInvitationPage, setInvitationPage, 'Invitation pages')}
+      </div>}
+      {!isLoading && !loadError && members.length === 0 && <p role="status">{isEn ? 'No team members were returned.' : 'Aucun membre n’a été retourné.'}</p>}
+      <div className="space-y-2">{members.slice(safeMemberPage * MEMBER_PAGE_SIZE, (safeMemberPage + 1) * MEMBER_PAGE_SIZE).map(member => <article key={member.id} className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-lg border p-3" style={{ borderColor: 'rgb(var(--color-border))' }}>
+        <div className="min-w-0"><p className="break-words font-medium">{member.name || member.email}</p><p className="break-all text-xs text-muted">{member.email}</p></div>
+        <div className="flex flex-wrap items-center gap-2">{canManageMembers && member.role !== 'owner' ? <>
+          <select className="input text-sm" aria-label={`${isEn ? 'Role for' : 'Rôle de'} ${member.email}`} value={member.role} disabled={busyId !== null} onChange={event => void changeRole(member.id, event.target.value as EditableMemberRole)}>{roles}</select>
+          <button className="btn-secondary btn-sm" disabled={busyId !== null} onClick={() => void handleRemove(member.id, member.name || member.email)}>{isEn ? 'Remove' : 'Retirer'}</button>
+        </> : <span className="text-sm">{roleLabel(member.role)}</span>}</div>
+      </article>)}</div>
+      {paginate(members.length, safeMemberPage, setMemberPage, 'Member pages')}
+      {showInviteModal && <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4">
+        <form onSubmit={handleInvite} role="dialog" aria-modal="true" aria-labelledby="invite-title" className="w-full max-w-md rounded-xl p-5 space-y-4" style={{ backgroundColor: 'rgb(var(--color-surface))' }}>
+          <h3 id="invite-title" className="text-lg font-semibold">{isEn ? 'Invite a team member' : 'Inviter un membre'}</h3>
+          <label className="block text-sm">{isEn ? 'Email address' : 'Adresse courriel'}<input autoFocus required type="email" maxLength={320} className="input mt-1 w-full" value={inviteEmail} onChange={event => setInviteEmail(event.target.value)} disabled={isInviting} /></label>
+          <label className="block text-sm">{isEn ? 'Role' : 'Rôle'}<select className="input mt-1 w-full" value={inviteRole} onChange={event => setInviteRole(event.target.value as EditableMemberRole)} disabled={isInviting}>{roles}</select></label>
+          <p className="text-sm text-muted">{isEn ? 'The invitation will use the permissions associated with this role. Email delivery and the invitation link will appear after creation.' : 'L’invitation utilisera les permissions de ce rôle. Le statut de livraison et le lien apparaîtront après la création.'}</p>
+          {inviteError && <p role="alert" className="text-sm text-red-600">{inviteError}</p>}
+          <div className="flex justify-end gap-2"><button type="button" className="btn-secondary" disabled={isInviting} onClick={() => setShowInviteModal(false)}>{isEn ? 'Cancel' : 'Annuler'}</button><button type="submit" className="btn-primary" disabled={isInviting}>{isInviting ? (isEn ? 'Creating…' : 'Création…') : (isEn ? 'Create invitation' : 'Créer l’invitation')}</button></div>
+        </form>
+      </div>}
+    </section>
   );
 }

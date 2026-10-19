@@ -59,6 +59,7 @@ export interface BalanceSheetData {
   };
   equity: AccountBalanceExtended[];
   hasComparison?: boolean;
+  isDemoData?: boolean;
 }
 
 export interface IncomeStatementData {
@@ -76,6 +77,7 @@ export interface IncomeStatementData {
   /** Source lines for which the provider does not expose an expense subtype. */
   unclassifiedExpenses?: AccountBalanceExtended[];
   hasComparison?: boolean;
+  isDemoData?: boolean;
 }
 
 export interface CashFlowData {
@@ -296,7 +298,7 @@ export interface FinancialDataResponse {
     cashFlow: TrendDataset;
     profit: TrendDataset;
   };
-  accounts: AccountBalanceExtended[];
+  accounts: (Omit<AccountBalanceExtended, 'current'> & { current: number | null })[];
   cashFlowWaterfall: WaterfallDataPoint[];
   demoAnomalies: DemoAnomalyData[];
   industry: string;

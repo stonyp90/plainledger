@@ -20,13 +20,22 @@ export function adaptBalanceSheet(report: BalanceSheetResult, organizationId: st
   const lines = (items: BalanceSheetResult['assets'], type: AccountBalanceExtended['type']) =>
     items.filter(item => !item.isSubtotal).map(item => ({
       code: item.accountCode, name: item.accountName, nameEn: item.accountName,
-      current: item.balance, prior: 0, type,
+      current: item.balance, prior: 0, type, subType: item.accountSubType || undefined,
     }));
   return {
     asOfDate: report.asOfDate, comparisonDate: '', hasComparison: false,
     organizationId, organizationName: report.organizationName, currency: report.currency,
-    assets: { currentAssets: [], fixedAssets: [], unclassifiedAssets: lines(report.assets, 'asset') },
-    liabilities: { currentLiabilities: [], longTermLiabilities: [], unclassifiedLiabilities: lines(report.liabilities, 'liability') },
+    assets: {
+      currentAssets: lines(report.assets.filter(item => item.accountSubType === 'CURRENT'), 'asset'),
+      fixedAssets: lines(report.assets.filter(item => item.accountSubType === 'FIXED'), 'asset'),
+      otherAssets: lines(report.assets.filter(item => item.accountSubType === 'OTHER'), 'asset'),
+      unclassifiedAssets: lines(report.assets.filter(item => !['CURRENT', 'FIXED', 'OTHER'].includes(item.accountSubType || '')), 'asset'),
+    },
+    liabilities: {
+      currentLiabilities: lines(report.liabilities.filter(item => item.accountSubType === 'CURRENT'), 'liability'),
+      longTermLiabilities: lines(report.liabilities.filter(item => item.accountSubType === 'LONG_TERM'), 'liability'),
+      unclassifiedLiabilities: lines(report.liabilities.filter(item => !['CURRENT', 'LONG_TERM'].includes(item.accountSubType || '')), 'liability'),
+    },
     equity: lines(report.equity, 'equity'),
   };
 }
@@ -34,13 +43,17 @@ export function adaptBalanceSheet(report: BalanceSheetResult, organizationId: st
 export function adaptIncomeStatement(report: IncomeStatementResult, organizationId: string): IncomeStatementData {
   const lines = (items: IncomeStatementResult['revenue'], type: AccountBalanceExtended['type']) => items.map(item => ({
     code: item.accountCode, name: item.accountName, nameEn: item.accountName,
-    current: item.amount, prior: 0, budget: item.budget, type,
+    current: item.amount, prior: 0, budget: item.budget ?? undefined, type, subType: item.accountSubType || undefined,
   }));
   return {
     periodStart: report.startDate, periodEnd: report.endDate,
     comparisonPeriodStart: '', comparisonPeriodEnd: '', hasComparison: false,
     organizationId, currency: report.currency,
-    revenue: lines(report.revenue, 'revenue'), costOfGoodsSold: [], operatingExpenses: [],
-    otherIncome: [], otherExpenses: [], unclassifiedExpenses: lines(report.expenses, 'expense'),
+    revenue: lines(report.revenue.filter(item => item.accountSubType !== 'OTHER'), 'revenue'),
+    otherIncome: lines(report.revenue.filter(item => item.accountSubType === 'OTHER'), 'revenue'),
+    costOfGoodsSold: lines(report.expenses.filter(item => item.accountSubType === 'COGS'), 'expense'),
+    operatingExpenses: lines(report.expenses.filter(item => item.accountSubType === 'OPERATING'), 'expense'),
+    otherExpenses: lines(report.expenses.filter(item => ['OTHER', 'TAX'].includes(item.accountSubType || '')), 'expense'),
+    unclassifiedExpenses: lines(report.expenses.filter(item => !['COGS', 'OPERATING', 'OTHER', 'TAX'].includes(item.accountSubType || '')), 'expense'),
   };
 }

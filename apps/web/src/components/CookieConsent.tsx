@@ -477,11 +477,6 @@ function CookieCategory({
 declare global {
   interface Window {
     gtag?: (command: string, action: string, params?: Record<string, string>) => void;
-    posthog?: {
-      opt_in_capturing: () => void;
-      opt_out_capturing: () => void;
-      has_opted_in_capturing: () => boolean;
-      has_opted_out_capturing: () => boolean;
-    };
+
   }
 }

@@ -51,7 +51,6 @@ const generateMockData = (months: number = 12): FinancialDataPoint[] => {
     data.push({
       period: date.toISOString(),
       value,
-      label: date.toLocaleDateString('en-CA', { month: 'short', year: 'numeric' }),
     });
   }
   

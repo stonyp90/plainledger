@@ -16,7 +16,7 @@ import { TenantGuard, validateOrganizationAccess } from '../tenant.guard';
 import { createTestIdentityProvider } from './test-identity-provider';
 import { OrganizationController } from '@infrastructure/http/controllers/organization.controller';
 import { UserProfileEntity } from '@infrastructure/persistence/postgres/entities/user-profile.entity';
-import { CreateOrganizationUseCase } from '@application/use-cases/create-organization.use-case';
+import { OrganizationMembershipService } from '@application/services/organization-membership.service';
 import { GetOrganizationUseCase } from '@application/use-cases/get-organization.use-case';
 import { Repository } from 'typeorm';
 
@@ -25,7 +25,7 @@ describe('Authenticated organization HTTP boundary', () => {
   const profile = { organizationId: 'org-123', organization: { tenantId: 'our-company' } };
   const profiles = { findOne: jest.fn() };
   const getOrganization = { execute: jest.fn() };
-  const createOrganization = { execute: jest.fn() };
+  const createOrganization = { createOwnedOrganization: jest.fn() };
   let app: INestApplication;
 
   beforeAll(async () => {
@@ -37,7 +37,7 @@ describe('Authenticated organization HTTP boundary', () => {
         { provide: KEYCLOAK_INSTANCE, useValue: identity.keycloak },
         { provide: getRepositoryToken(UserProfileEntity), useValue: profiles },
         { provide: GetOrganizationUseCase, useValue: getOrganization },
-        { provide: CreateOrganizationUseCase, useValue: createOrganization },
+        { provide: OrganizationMembershipService, useValue: createOrganization },
       ],
     }).compile();
     app = module.createNestApplication();
@@ -50,9 +50,9 @@ describe('Authenticated organization HTTP boundary', () => {
   beforeEach(() => {
     profiles.findOne.mockReset().mockResolvedValue(profile);
     getOrganization.execute.mockReset().mockImplementation(async ({ tenantId }: { tenantId: string }) => ({ tenantId }));
-    createOrganization.execute.mockReset().mockResolvedValue({ id: 'new-org' });
+    createOrganization.createOwnedOrganization.mockReset().mockResolvedValue({ id: 'new-org' });
   });
-  afterAll(async () => { await app.close(); identity.onlineValidation.mockRestore(); });
+  afterAll(async () => { await app?.close(); identity.onlineValidation.mockRestore(); });
 
   const authenticate = (claims: Record<string, unknown> = {}) => `Bearer ${identity.issueToken(claims)}`;
 
@@ -107,19 +107,19 @@ describe('Authenticated organization HTTP boundary', () => {
     { tenantId: 'our-company', name: 'Company', unexpected: true },
   ])('rejects invalid organization input before writes: %j', async (body) => {
     await request(app.getHttpServer()).post('/organizations').set('Authorization', authenticate()).send(body).expect(400);
-    expect(createOrganization.execute).not.toHaveBeenCalled();
+    expect(createOrganization.createOwnedOrganization).not.toHaveBeenCalled();
   });
 
   it('accepts declared organization fields under the production validation pipe', async () => {
     await request(app.getHttpServer()).post('/organizations').set('Authorization', authenticate())
       .send({ tenantId: 'our-company', name: 'Company', currency: 'CAD', fiscalYearEndMonth: 12 }).expect(201);
-    expect(createOrganization.execute).toHaveBeenCalledTimes(1);
+    expect(createOrganization.createOwnedOrganization).toHaveBeenCalledTimes(1);
   });
 
   it('cannot create or reserve a different tenant', async () => {
     await request(app.getHttpServer()).post('/organizations').set('Authorization', authenticate())
       .send({ tenantId: 'another-company', name: 'Company' }).expect(403);
-    expect(createOrganization.execute).not.toHaveBeenCalled();
+    expect(createOrganization.createOwnedOrganization).not.toHaveBeenCalled();
   });
 
   it('does not allow TypeORM to omit an undefined identity filter', async () => {

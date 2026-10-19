@@ -21,7 +21,7 @@
   "maxDeltaTimeSeconds": 43200,
   "verifyEmail": false,
   "loginTheme": "keycloak",
-  "accountTheme": "keycloak.v2",
+  "accountTheme": "keycloak.v3",
   "emailTheme": "plainledger",
   "internationalizationEnabled": true,
   "supportedLocales": [
@@ -271,19 +271,57 @@
       },
       {
         "name": "admin",
-        "description": "Administrator with full access"
+        "description": "Administrator with full access",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "user"
+          ]
+        }
       },
       {
         "name": "accountant",
-        "description": "Accountant with access to financial reports"
+        "description": "Accountant with access to financial reports",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "user"
+          ]
+        }
       },
       {
         "name": "viewer",
-        "description": "Read-only access to reports"
+        "description": "Read-only access to reports",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "user"
+          ]
+        }
       },
       {
         "name": "owner",
-        "description": "Organization owner with billing access"
+        "description": "Organization owner with billing access",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "user"
+          ]
+        }
+      },
+      {
+        "name": "user",
+        "description": "Authenticated tenant user"
+      },
+      {
+        "name": "member",
+        "description": "Organization member",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "user"
+          ]
+        }
       }
     ]
   },

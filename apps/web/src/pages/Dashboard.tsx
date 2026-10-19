@@ -62,7 +62,7 @@ import { useHasRealData } from '../hooks/useHasRealData';
 import { useAccountDataAccess } from '../hooks/useAccountDataAccess';
 import { runFullAnalysis, DEFAULT_THRESHOLDS, type AccountBalance } from '../lib/anomalyDetection';
 import { INDUSTRY_KPIS } from '../lib/industryBenchmarkDisplay';
-import type { DataMetric, DecisionEvent } from '../lib/decisionContext';
+import type { DataMetric, DecisionEvent, IndustryType as DecisionIndustryType } from '../lib/decisionContext';
 import { calculateVariance, type IBCSMetricType } from '../lib/ibcs';
 import EmptyDataState from '../components/EmptyDataState';
 import ConnectionWizard from '../components/ConnectionWizard';
@@ -77,6 +77,8 @@ import { useDashboardConfig } from '../hooks/useDashboardConfig';
 import PageLoader, { DashboardSkeleton } from '../components/PageLoader';
 import type { ChartConfig } from '../lib/chartFavorites';
 import type { DashboardWidgetConfig } from '../lib/dashboardConfig';
+
+const decisionIndustries: readonly DecisionIndustryType[] = ['real_estate', 'construction', 'hospitality', 'restaurant', 'retail', 'professional_services', 'manufacturing', 'agriculture', 'transport', 'healthcare', 'education', 'wholesale', 'automotive', 'beauty_wellness', 'technology'];
 
 // =====================================================
 // DASHBOARD COMPONENT
@@ -209,10 +211,10 @@ export default function Dashboard() {
   // Transform financial data to account balances for anomaly detection
   const accountsData: AccountBalance[] = useMemo(() => {
     if (!financialData) return [];
-    return (financialData.accounts ?? []).map((a) => ({
+    return (financialData.accounts ?? []).filter(a => typeof a.current === 'number' && Number.isFinite(a.current)).map((a) => ({
       code: a.code,
       name: a.name,
-      current: a.current,
+      current: a.current as number,
       prior: a.prior,
       type: a.type,
     }));
@@ -886,7 +888,7 @@ export default function Dashboard() {
         component: wrapSection(
           'industry-benchmarks',
           <IndustryBenchmarksSection
-            industry={currentTenant?.industry || 'real_estate'}
+            industry={decisionIndustries.find(value => value === currentTenant?.industry) || 'professional_services'}
             isEn={language === 'en'}
             ibcsMode={ibcsMode}
             financialData={financialData}
@@ -990,7 +992,7 @@ export default function Dashboard() {
             chartId="dashboard-cashflow-trend"
             enableDecisions={hasDecisionCapture}
             onRecordDecision={handleRecordDecision}
-            recentDecisions={recentDecisions.filter((d) => d.context.metricType === 'cash_flow')}
+            recentDecisions={recentDecisions.filter((d) => d.trigger.metricType === 'cash_flow')}
             metricType="cash_flow"
             compact={false}
           />
@@ -1043,7 +1045,7 @@ export default function Dashboard() {
             chartId="dashboard-revenue-trend"
             enableDecisions={hasDecisionCapture}
             onRecordDecision={handleRecordDecision}
-            recentDecisions={recentDecisions.filter((d) => d.context.metricType === 'revenue')}
+            recentDecisions={recentDecisions.filter((d) => d.trigger.metricType === 'revenue')}
             metricType="revenue"
             benchmarkValue={
               revenueBudget.length > 0 ? revenueBudget[revenueBudget.length - 1] : undefined
@@ -1558,31 +1560,13 @@ export default function Dashboard() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
 
-  // Handle decision submission
+  // DecisionCapture calls this only after the API confirms a persisted record.
   const handleDecisionSubmit = useCallback(
-    async (decision: DecisionEvent) => {
-      try {
-        // In production, this would POST to the API
-        // For now, store in local state and show toast
-        setRecentDecisions((prev) => [decision, ...prev].slice(0, 10));
-        toast.success(
-          language === 'en' ? 'Decision recorded!' : 'Décision enregistrée!',
-          language === 'en'
-            ? 'Your decision has been logged and will be tracked for outcome measurement.'
-            : 'Votre décision a été enregistrée et sera suivie pour mesurer les résultats.',
-        );
-        setShowDecisionCapture(false);
-        setDecisionTrigger(null);
-      } catch {
-        toast.error(
-          language === 'en' ? 'Error' : 'Erreur',
-          language === 'en'
-            ? 'Failed to save decision'
-            : "Échec de l'enregistrement de la décision",
-        );
-      }
-    },
-    [toast, language],
+    (decision: DecisionEvent) => {
+      setRecentDecisions(previous => [decision, ...previous.filter(item => item.id !== decision.id)].slice(0, 10));
+      toast.success(language === 'en' ? 'Decision saved' : 'Décision enregistrée',
+        language === 'en' ? 'Your decision was saved to the organization’s history.' : 'Votre décision a été enregistrée dans l’historique de l’organisation.');
+    }, [toast, language],
   );
 
   const handleRefresh = async () => {
@@ -2055,14 +2039,10 @@ export default function Dashboard() {
                 setShowDecisionCapture(false);
                 setDecisionTrigger(null);
               }}
-              onSubmit={handleDecisionSubmit}
-              metricType={decisionTrigger.metricType}
-              metricLabel={decisionTrigger.metricLabel}
-              currentValue={decisionTrigger.currentValue}
-              benchmarkValue={decisionTrigger.benchmarkValue}
-              period={decisionTrigger.period}
-              industry={currentTenant?.industry || 'real_estate'}
-              isEn={isEn}
+              onSave={handleDecisionSubmit}
+              trigger={decisionTrigger}
+              organizationId={currentTenant?.id || ''}
+              industry={decisionIndustries.find(value => value === currentTenant?.industry)}
             />
           )}
         </>

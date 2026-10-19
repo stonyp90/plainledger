@@ -90,7 +90,7 @@ export function Tooltip({
   const [tooltipCoords, setTooltipCoords] = useState({ top: 0, left: 0 });
   const triggerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const handleOpen = () => {
     if (disabled) return;
@@ -770,7 +770,7 @@ export function ActionTooltip({
   const [tooltipCoords, setTooltipCoords] = useState({ top: 0, left: 0 });
   const triggerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const handleOpen = () => {
     timeoutRef.current = setTimeout(() => {

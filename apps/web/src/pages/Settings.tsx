@@ -213,7 +213,7 @@ export default function Settings() {
           await organizationSettingsApi.updateBranding({
             logo: result.url,
             primaryColor: currentTenant.settings.branding?.primaryColor,
-            secondaryColor: currentTenant.settings.branding?.secondaryColor,
+            secondaryColor: currentTenant.settings.branding?.accentColor,
           });
         } catch (error) {
           console.error('Failed to persist logo URL to API:', error);
@@ -268,7 +268,7 @@ export default function Settings() {
         await organizationSettingsApi.updateBranding({
           logo: undefined,
           primaryColor: currentTenant.settings.branding?.primaryColor,
-          secondaryColor: currentTenant.settings.branding?.secondaryColor,
+          secondaryColor: currentTenant.settings.branding?.accentColor,
         });
       } catch (error) {
         console.error('Failed to persist logo deletion to API:', error);

@@ -41,7 +41,7 @@ import {
   generateId,
 } from '../../lib/visualizationTypes';
 import { ChartType, TimeRange, ComparisonMode } from '../../lib/chartFavorites';
-import DataSourceSelector from './DataSourceSelector';
+import DataSourceSelector from './SchemaSourceSelector';
 import { FieldPicker } from './FieldPicker';
 import { MetadataEditor } from './MetadataEditor';
 import { JoinBuilder } from './JoinBuilder';

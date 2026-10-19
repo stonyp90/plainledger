@@ -1,11 +1,13 @@
 import {
   Injectable,
   Logger,
+  ServiceUnavailableException,
   OnModuleInit,
   OnModuleDestroy,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import Redis from "ioredis";
+import { createHash } from 'crypto';
 
 /**
  * Cache Service
@@ -119,6 +121,35 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  /** Atomically consume a recovery token across API replicas. Fail closed without Redis. */
+  async consumeAuthAction(fingerprint: string, ttlSeconds: number): Promise<boolean> {
+    if (!this.isAvailable()) throw new ServiceUnavailableException("Authentication recovery storage is unavailable");
+    if (!/^[a-f0-9]{64}$/.test(fingerprint) || !Number.isInteger(ttlSeconds) || ttlSeconds < 1 || ttlSeconds > 86400) {
+      throw new Error("Invalid authentication recovery state");
+    }
+    return await this.redis!.set(`auth:used:${fingerprint}`, "1", "EX", ttlSeconds, "NX") === "OK";
+  }
+
+  async putOAuthState(state: string, value: unknown, ttlSeconds = 600): Promise<void> {
+    if (!this.isAvailable()) throw new ServiceUnavailableException("OAuth state storage is unavailable");
+    const payload = JSON.stringify(value);
+    if (!/^[A-Za-z0-9_-]{43}$/.test(state) || !Number.isInteger(ttlSeconds) || ttlSeconds < 1 || ttlSeconds > 600 || payload.length > 8192) {
+      throw new Error("Invalid OAuth state");
+    }
+    const saved = await this.redis!.set(`auth:oauth:${state}`, payload, "EX", ttlSeconds, "NX");
+    if (saved !== "OK") throw new ServiceUnavailableException("OAuth state could not be created");
+  }
+
+  /** GETDEL makes callback state single-use even across concurrent API replicas. */
+  async consumeOAuthState(state: string): Promise<unknown | null> {
+    if (!this.isAvailable()) throw new ServiceUnavailableException("OAuth state storage is unavailable");
+    if (!/^[A-Za-z0-9_-]{43}$/.test(state)) return null;
+    const value = await this.redis!.getdel(`auth:oauth:${state}`);
+    if (value === null) return null;
+    try { return JSON.parse(value) as unknown; }
+    catch { return null; }
+  }
+
   /**
    * Get value from cache
    */
@@ -184,18 +215,28 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
-      const keys = await this.redis!.keys(pattern);
-      if (keys.length === 0) {
-        return 0;
-      }
-      await this.redis!.del(...keys);
-      return keys.length;
+      return await this.deleteMatchingKeys(pattern);
     } catch (error) {
       this.logger.error(
         `Cache delete pattern error for ${pattern}: ${error.message}`,
       );
       return 0;
     }
+  }
+
+  private async deleteMatchingKeys(pattern: string): Promise<number> {
+    if (!this.isAvailable()) throw new ServiceUnavailableException('Cache storage is unavailable');
+    let cursor = '0';
+    let deleted = 0;
+    do {
+      const [next, keys] = await this.redis!.scan(cursor, 'MATCH', pattern, 'COUNT', 500);
+      cursor = next;
+      // SCAN may return more than COUNT or repeat keys. DEL's affected count is authoritative.
+      for (let offset = 0; offset < keys.length; offset += 500) {
+        deleted += await this.redis!.del(...keys.slice(offset, offset + 500));
+      }
+    } while (cursor !== '0');
+    return deleted;
   }
 
   /**
@@ -253,7 +294,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
           {} as Record<string, any>,
         ),
     );
-    const filterHash = Buffer.from(filterStr).toString("base64").slice(0, 16);
+    const filterHash = createHash('sha256').update(filterStr).digest('hex');
     return `${baseKey}:${filterHash}`;
   }
 
@@ -262,10 +303,13 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
    * Optionally invalidate specific entity type
    */
   async invalidateDatalake(orgId: string, entity?: string): Promise<number> {
+    if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$/.test(orgId) || (entity !== undefined && !/^[A-Za-z0-9:_-]{1,100}$/.test(entity))) {
+      throw new Error('Invalid data cache scope');
+    }
     const pattern = entity
       ? `datalake:${orgId}:${entity}*`
       : `datalake:${orgId}:*`;
-    return this.deletePattern(pattern);
+    return this.deleteMatchingKeys(pattern);
   }
 
   /**

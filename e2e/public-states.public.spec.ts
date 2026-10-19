@@ -5,7 +5,10 @@ for (const language of ['en', 'fr']) {
   for (const width of [360, 768, 1440]) {
     test(`${language} public pages render without overflow or broken SVG at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 960 });
-      await page.addInitScript(lang => localStorage.setItem('plainledger-language', lang), language);
+      await page.addInitScript(lang => {
+        // Only seed the app, not sandboxed third-party frames.
+        if (window.top === window && /^https?:$/.test(window.location.protocol)) localStorage.setItem('plainledger-language', lang);
+      }, language);
       const errors: string[] = [];
       page.on('pageerror', error => errors.push(error.message));
       for (const fixture of pages) {
@@ -28,13 +31,14 @@ for (const language of ['en', 'fr']) {
 
 test('a protected route sends an anonymous visitor to sign in', async ({ page }) => {
   await page.goto('/app/reports');
-  await expect(page).toHaveURL(/\/login(?:\?|$)/);
+  // The identity-provider outage deadline is 10s; allow navigation to settle after it.
+  await expect(page).toHaveURL(/\/login(?:\?|$)/, { timeout: 15000 });
   await expect(page.locator('input[type="password"]')).toHaveCount(0);
   await expect(page.getByRole('button', { name: /Continue to sign in|Continuer la connexion/i })).toBeVisible();
 });
 
 test('empty and malformed contact fields cannot submit', async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('plainledger-language', 'en'));
+  await page.addInitScript(() => { if (window.top === window && /^https?:$/.test(window.location.protocol)) localStorage.setItem('plainledger-language', 'en'); });
   const submissions: string[] = [];
   page.on('request', request => { if (request.method() === 'POST' && /contact/.test(request.url())) submissions.push(request.url()); });
   await page.goto('/');

@@ -1,3 +1,4 @@
+import { isProjectionRequestValid, isInitiativeValid, isAssumptionValid } from './planningValidation';
 /**
  * Strategic Planning Types and Calculation Engine
  * 
@@ -192,18 +193,18 @@ export function getExpenseCashImpact(
   monthDate: Date
 ): number {
   const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
-  const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+  const nextMonthStart = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1);
   const expStart = new Date(expense.startDate);
   const expEnd = new Date(expense.endDate);
   
   // Check if expense is active in this month
-  if (expStart > monthEnd || expEnd < monthStart) {
+  if (expStart >= nextMonthStart || expEnd < monthStart) {
     return 0;
   }
   
   if (expense.frequency === 'one_time') {
     // One-time impact only in the first month
-    if (expStart >= monthStart && expStart <= monthEnd) {
+    if (expStart >= monthStart && expStart < nextMonthStart) {
       return -expense.amount; // Negative = outflow
     }
     return 0;
@@ -377,18 +378,18 @@ export function getInitiativeCashImpact(
   monthDate: Date
 ): number {
   const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
-  const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+  const nextMonthStart = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1);
   const initStart = new Date(initiative.startDate);
   const initEnd = new Date(initiative.endDate);
   
   // Check if initiative is active in this month
-  if (initStart > monthEnd || initEnd < monthStart) {
+  if (initStart >= nextMonthStart || initEnd < monthStart) {
     return 0;
   }
   
   if (initiative.cashImpact.type === 'one_time') {
     // One-time impact only in the first month
-    if (initStart >= monthStart && initStart <= monthEnd) {
+    if (initStart >= monthStart && initStart < nextMonthStart) {
       return initiative.cashImpact.amount;
     }
     return 0;
@@ -429,6 +430,10 @@ export function calculateCashForecast(
   assumptions: Assumption[],
   months: number = 24
 ): CashForecast {
+  if (!isProjectionRequestValid(currentCash, currentDate, months) || !Array.isArray(initiatives) ||
+      !initiatives.every(isInitiativeValid) || !Array.isArray(assumptions) || !assumptions.every(isAssumptionValid)) {
+    throw new RangeError('Forecast requires valid amounts, dates, and a horizon from 0 to 1200 months.');
+  }
   const projected: CashForecast['projected'] = [];
   
   // Extract base assumptions
@@ -484,6 +489,9 @@ export function calculateCashForecast(
       return acc;
     }, 0.85);
     
+    if (![runningCash, monthRevenue, monthExpenses, confidence].every(Number.isFinite)) {
+      throw new RangeError('Forecast amounts exceed the supported numeric range.');
+    }
     projected.push({
       date: monthDate.toISOString(),
       cash: runningCash,

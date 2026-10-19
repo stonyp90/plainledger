@@ -15,7 +15,7 @@ import { OrganizationEntity } from "./organization.entity";
  */
 @Entity({ name: "organization_settings", schema: "accounting" })
 export class OrganizationSettingsEntity {
-  @PrimaryColumn({ type: "uuid" })
+  @PrimaryColumn({ name: "organization_id", type: "uuid" })
   organizationId: string;
 
   @ManyToOne(() => OrganizationEntity, { onDelete: "CASCADE" })

@@ -96,7 +96,14 @@ jobs:
       VITE_KEYCLOAK_URL: http://localhost:8080
       VITE_KEYCLOAK_REALM: plainledger
       VITE_MOCK_AUTH: 'false'
-      WEB_URL: http://localhost:5173
+      # Generated links use a reserved HTTPS hostname; no test mail leaves this stack.
+      WEB_URL: https://plainledger.e2e.invalid
+      TEAM_INVITATIONS_EMAIL_ENABLED: 'false'
+      S3_ENDPOINT: http://127.0.0.1:9000
+      S3_BUCKET_GOLD: plainledger-e2e
+      S3_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: plainledger-e2e-storage
+      AWS_SECRET_ACCESS_KEY: PlainLedger-E2E-Storage-Only-2026
       ADMIN_URL: http://localhost:5174
       CORS_ORIGINS: http://localhost:5173
       E2E_USERNAME: e2e-owner@plainledger.test
@@ -151,6 +158,22 @@ jobs:
           node e2e/wait-for-http.cjs http://localhost:5173
       - name: Public states and real PKCE authentication
         run: npx --no-install playwright test --config playwright.strict.config.ts
+      - name: Verify actual object storage and committed accounting snapshots
+        if: ${{ !cancelled() }}
+        run: |
+          image=quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
+          if ! docker pull "$image"; then
+            image=minio/minio:RELEASE.2025-09-07T16-13-09Z
+            docker pull "$image"
+          fi
+          mkdir -p test-results/runtime
+          docker image inspect "$image" --format '{{json .RepoDigests}}' > test-results/runtime/s3-image-digests.json
+          docker run -d --name plainledger-s3-e2e -p 127.0.0.1:9000:9000 \
+            -e MINIO_ROOT_USER="$AWS_ACCESS_KEY_ID" \
+            -e MINIO_ROOT_PASSWORD="$AWS_SECRET_ACCESS_KEY" \
+            "$image" server /data --console-address :9001
+          node e2e/wait-for-http.cjs http://127.0.0.1:9000/minio/health/ready
+          node e2e/datalake-real-storage.cjs
       - name: Collect runtime logs
         if: always()
         run: |
@@ -160,6 +183,9 @@ jobs:
           done
           if docker inspect plainledger-keycloak-e2e > /dev/null 2>&1; then
             docker logs plainledger-keycloak-e2e > test-results/runtime/keycloak.log 2>&1
+          fi
+          if docker inspect plainledger-s3-e2e > /dev/null 2>&1; then
+            docker logs plainledger-s3-e2e > test-results/runtime/s3.log 2>&1
           fi
       - uses: actions/upload-artifact@v4
         if: always()

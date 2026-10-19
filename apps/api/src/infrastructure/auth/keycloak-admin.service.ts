@@ -14,7 +14,7 @@
  *   - Password reset: /reset-password?token=...
  *   - Email verification: /verify-email?token=...
  * - This ensures consistent branding and user experience instead of Keycloak's default action pages
- * - Keycloak's executeActionsEmail API is NOT used - we bypass it entirely
+ * - Production uses Keycloak action emails via its configured SMTP server.
  */
 
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
@@ -22,6 +22,7 @@ import { ConfigService } from '@nestjs/config';
 import { IKeycloakAdminService } from '@application/ports/outbound/IKeycloakAdminService';
 import { SESAdapter } from '@infrastructure/adapters/email/ses/ses.adapter';
 import * as crypto from 'crypto';
+import { authEmailProvider, issueAuthAction } from './action-token';
 
 // Dynamic import for ESM module compatibility
 // The @keycloak/keycloak-admin-client v26+ is ESM-only
@@ -44,6 +45,7 @@ export interface CreateUserInput {
   attributes?: Record<string, string[]>;
   roles?: string[];
   sendVerificationEmail?: boolean;
+  requiredActions?: string[];
 }
 
 export interface UpdateUserAttributesInput {
@@ -231,12 +233,12 @@ export class KeycloakAdminService implements IKeycloakAdminService, OnModuleInit
       enabled: true,
       emailVerified: input.emailVerified ?? false,
       attributes: input.attributes || {},
-      requiredActions: [],
+      requiredActions: input.requiredActions || [],
     };
 
     // If no password provided, user will need to set password via email
     if (!input.password) {
-      userRep.requiredActions = ['UPDATE_PASSWORD'];
+      userRep.requiredActions = [...new Set([...(userRep.requiredActions || []), 'UPDATE_PASSWORD'])];
     }
 
     // NOTE: We do NOT add VERIFY_EMAIL required action here.
@@ -488,42 +490,12 @@ export class KeycloakAdminService implements IKeycloakAdminService, OnModuleInit
   /**
    * Get token secret for signing tokens
    */
-  private getTokenSecret(): string {
-    return (
-      this.configService.get<string>('TOKEN_SECRET') ||
-      this.configService.get<string>('KEYCLOAK_CLIENT_SECRET') ||
-      'plainledger-default-secret-change-me'
-    );
-  }
-
-  /**
-   * Generate a secure email verification token
-   * Format: base64url(verify:userId:email:expiry).signature
-   * Expiry: 24 hours
-   */
   private generateVerificationToken(userId: string, email: string): string {
-    const secret = this.getTokenSecret();
-    const expiry = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
-    const payload = Buffer.from(`verify:${userId}:${email}:${expiry}`).toString('base64url');
-
-    const signature = crypto.createHmac('sha256', secret).update(payload).digest('base64url');
-
-    return `${payload}.${signature}`;
+    return issueAuthAction(this.configService, 'verify', userId, email);
   }
 
-  /**
-   * Generate a secure password reset token
-   * Format: base64url(reset:userId:email:expiry).signature
-   * Expiry: 15 minutes
-   */
   private generateResetToken(userId: string, email: string): string {
-    const secret = this.getTokenSecret();
-    const expiry = Date.now() + 15 * 60 * 1000; // 15 minutes
-    const payload = Buffer.from(`reset:${userId}:${email}:${expiry}`).toString('base64url');
-
-    const signature = crypto.createHmac('sha256', secret).update(payload).digest('base64url');
-
-    return `${payload}.${signature}`;
+    return issueAuthAction(this.configService, 'reset', userId, email);
   }
 
   /**
@@ -534,6 +506,15 @@ export class KeycloakAdminService implements IKeycloakAdminService, OnModuleInit
   async sendVerificationEmail(userId: string, redirectUri?: string): Promise<void> {
     if (!this.isConfigured) {
       throw new Error('Keycloak Admin Service not configured');
+    }
+
+    if (authEmailProvider(this.configService) === 'keycloak') {
+      const webUrl = this.configService.get<string>('FRONTEND_URL') || this.configService.get<string>('WEB_URL');
+      await this.adminClient.users.executeActionsEmail({
+        realm: this.realm, id: userId, clientId: 'plainledger-web', actions: ['VERIFY_EMAIL'], lifespan: 86400,
+        ...(redirectUri || webUrl ? { redirectUri: redirectUri || webUrl } : {}),
+      });
+      return;
     }
 
     try {
@@ -613,6 +594,15 @@ export class KeycloakAdminService implements IKeycloakAdminService, OnModuleInit
   async sendPasswordResetEmail(userId: string, redirectUri?: string): Promise<void> {
     if (!this.isConfigured) {
       throw new Error('Keycloak Admin Service not configured');
+    }
+
+    if (authEmailProvider(this.configService) === 'keycloak') {
+      const webUrl = this.configService.get<string>('FRONTEND_URL') || this.configService.get<string>('WEB_URL');
+      await this.adminClient.users.executeActionsEmail({
+        realm: this.realm, id: userId, clientId: 'plainledger-web', actions: ['UPDATE_PASSWORD'], lifespan: 900,
+        ...(redirectUri || webUrl ? { redirectUri: redirectUri || webUrl } : {}),
+      });
+      return;
     }
 
     try {

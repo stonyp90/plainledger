@@ -3,16 +3,21 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD } from '@nestjs/core';
 import { TenantGuard } from '@infrastructure/auth/tenant.guard';
+import { DatabaseRoleGuard } from '@infrastructure/auth/database-role.guard';
+import { AuthenticationModule } from '@infrastructure/auth/authentication.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { GqlThrottlerGuard } from '@infrastructure/http/guards/gql-throttler.guard';
-import { KeycloakConnectModule, ResourceGuard, RoleGuard, AuthGuard } from 'nest-keycloak-connect';
+import { ResourceGuard, AuthGuard } from 'nest-keycloak-connect';
 
 // Configuration
 import { AppConfig } from '@infrastructure/config/app.config';
 
 // Domain
 import { OrganizationEntity } from '@infrastructure/persistence/postgres/entities/organization.entity';
+import { OrganizationInvitationEntity } from '@infrastructure/persistence/postgres/entities/organization-invitation.entity';
+import { OrganizationFeaturesEntity } from '@infrastructure/persistence/postgres/entities/organization-features.entity';
+import { DataSourceConnectionEntity } from '@infrastructure/persistence/postgres/entities/data-source-connection.entity';
 import { AccountEntity } from '@infrastructure/persistence/postgres/entities/account.entity';
 import { UserProfileEntity } from '@infrastructure/persistence/postgres/entities/user-profile.entity';
 import { OrganizationSettingsEntity } from '@infrastructure/persistence/postgres/entities/organization-settings.entity';
@@ -60,7 +65,6 @@ import { AIFeedbackController } from '@infrastructure/http/controllers/ai-feedba
 import { AnalyticsController } from '@infrastructure/http/controllers/analytics.controller';
 import { AIAnalyticsController } from '@infrastructure/http/controllers/ai-analytics.controller';
 import { BIDataController } from '@infrastructure/http/controllers/bi-data.controller';
-import { TeamController } from '@infrastructure/http/controllers/team.controller';
 import { AuthController } from '@infrastructure/http/controllers/auth.controller';
 import { SyncAdminController } from '@infrastructure/http/controllers/sync-admin.controller';
 import { IdentityAdminController } from '@infrastructure/http/controllers/identity-admin.controller';
@@ -96,6 +100,10 @@ import { EmbeddingService } from '@infrastructure/ai/embedding.service';
 import { SimilaritySearchService } from '@application/services/similarity-search.service';
 import { CustomEntityService } from '@application/services/custom-entity.service';
 import { UserPermissionsService } from '@application/services/user-permissions.service';
+import { OrganizationMembershipService } from '@application/services/organization-membership.service';
+import { AccountingConnectionsService } from '@application/services/accounting-connections.service';
+import { OrganizationFeaturePolicyService } from '@application/services/organization-feature-policy.service';
+import { AccountingSyncService } from '@application/services/accounting-sync.service';
 import { ProviderFactory } from '@application/services/provider-factory.service';
 import { QuickBooksProvider } from '@infrastructure/adapters/accounting/quickbooks/quickbooks.provider';
 import { QuickBooksService } from '@infrastructure/adapters/accounting/quickbooks/quickbooks.service';
@@ -209,6 +217,9 @@ import { PlatformAdminModule } from './modules/platform-admin';
         database: configService.get<string>('DATABASE_NAME') || 'plainledger',
         entities: [
           OrganizationEntity,
+          OrganizationInvitationEntity,
+          OrganizationFeaturesEntity,
+          DataSourceConnectionEntity,
           AccountEntity,
           UserProfileEntity,
           OrganizationSettingsEntity,
@@ -442,6 +453,9 @@ import { PlatformAdminModule } from './modules/platform-admin';
     }),
     TypeOrmModule.forFeature([
       OrganizationEntity,
+      OrganizationInvitationEntity,
+      OrganizationFeaturesEntity,
+      DataSourceConnectionEntity,
       AccountEntity,
       UserProfileEntity,
       OrganizationSettingsEntity,
@@ -464,18 +478,7 @@ import { PlatformAdminModule } from './modules/platform-admin';
     ]),
 
     // Keycloak Authentication
-    KeycloakConnectModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        authServerUrl: configService.get<string>('KEYCLOAK_URL') || 'http://localhost:8080',
-        realm: configService.get<string>('KEYCLOAK_REALM') || 'plainledger',
-        clientId: configService.get<string>('KEYCLOAK_CLIENT_ID') || 'plainledger-api',
-        secret: configService.get<string>('KEYCLOAK_CLIENT_SECRET') || 'change-me-in-production',
-        bearerOnly: true,
-        verifyTokenAudience: true,
-      }),
-      inject: [ConfigService],
-    }),
+    AuthenticationModule,
 
     // Notifications (SES handled via SESEmailModule in SESAdapter)
 
@@ -524,7 +527,6 @@ import { PlatformAdminModule } from './modules/platform-admin';
     AnalyticsController,
     AIAnalyticsController,
     BIDataController,
-    TeamController,
     AuthController,
     SyncAdminController,
     IdentityAdminController,
@@ -559,7 +561,7 @@ import { PlatformAdminModule } from './modules/platform-admin';
           },
           {
             provide: APP_GUARD,
-            useClass: RoleGuard,
+            useClass: DatabaseRoleGuard,
           },
         ]),
     // Rate Limiting Guard (applies to all routes including GraphQL)
@@ -592,6 +594,10 @@ import { PlatformAdminModule } from './modules/platform-admin';
     EmbeddingService,
     SimilaritySearchService,
     UserPermissionsService,
+    OrganizationMembershipService,
+    AccountingConnectionsService,
+    OrganizationFeaturePolicyService,
+    AccountingSyncService,
     ProviderFactory,
     QuickBooksService,
     QuickBooksProvider,
@@ -642,7 +648,6 @@ import { PlatformAdminModule } from './modules/platform-admin';
     TaxCreditResolver,
     VisualizationResolver,
     UserSettingsResolver,
-    GqlAuthGuard,
 
     // GraphQL PubSub for subscriptions - keep mock for services that inject it
     {

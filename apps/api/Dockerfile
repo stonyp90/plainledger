@@ -36,7 +36,7 @@ COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/scripts ./scripts
 
 # Copy email templates (not compiled by TypeScript)
-COPY --from=builder /app/src/templates ./dist/infrastructure/templates
+COPY --from=builder /app/src/templates ./dist/templates
 
 USER nestjs
 

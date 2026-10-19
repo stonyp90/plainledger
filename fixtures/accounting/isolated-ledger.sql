@@ -1,7 +1,12 @@
 -- Synthetic accounting fixtures for the guarded, disposable real-stack test only.
-INSERT INTO accounting.organizations (id, tenant_id, name, currency) VALUES
-('00000000-0000-4000-8000-000000000100','e2e-org-a','Isolated Ledger A','CAD'),
-('00000000-0000-4000-8000-000000000200','e2e-org-b','Isolated Ledger B','CAD');
+INSERT INTO accounting.organizations (id, tenant_id, name, currency, subscription_plan_id) VALUES
+('00000000-0000-4000-8000-000000000100','e2e-org-a','Isolated Ledger A','CAD','professional'),
+('00000000-0000-4000-8000-000000000200','e2e-org-b','Isolated Ledger B','CAD','free');
+
+INSERT INTO accounting.organization_features (organization_id,analytics,overrides,updated_by) VALUES
+('00000000-0000-4000-8000-000000000100',
+'{"plainledger":{"enabled":true,"visibleToRoles":["owner","admin","member","accountant","viewer","user"]},"powerbi":{"enabled":false,"visibleToRoles":["owner","admin"]}}',
+'{}','00000000-0000-4000-8000-000000000001');
 
 INSERT INTO accounting.accounts (id,organization_id,code,name,account_type,account_subtype) VALUES
 ('00000000-0000-4000-8000-000000001000','00000000-0000-4000-8000-000000000100','1000','Cash','ASSET','CURRENT_ASSET'),

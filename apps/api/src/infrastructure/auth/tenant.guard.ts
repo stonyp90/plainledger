@@ -88,7 +88,7 @@ export class TenantGuard implements CanActivate {
 
   private isPlatformAdmin(user: TenantUser): boolean {
     const roles = user.realm_access?.roles ?? user.roles ?? [];
-    if (Array.isArray(roles) && (roles.includes("super-admin") || roles.includes("platform-admin"))) return true;
+    if (Array.isArray(roles) && roles.some((role) => ["platform_admin", "platform-admin", "super-admin"].includes(role))) return true;
     if ((user.email_verified === true || user.emailVerified === true) && user.email) {
       const admins = (this.configService.get<string>("PLATFORM_ADMIN_EMAILS") || "")
         .split(",").map((email) => email.trim().toLowerCase()).filter(Boolean);

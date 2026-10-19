@@ -1,10 +1,5 @@
-/**
- * File Upload API
- *
- * Handles uploading logos, profile pictures, and other files to the backend.
- */
-
-import config from "./config";
+/** File uploads use the same refreshed, tenant-scoped transport as other API calls. */
+import { api } from './api';
 
 export interface UploadResult {
   success: boolean;
@@ -13,185 +8,52 @@ export interface UploadResult {
   error?: string;
 }
 
-/**
- * Get auth token from Keycloak
- */
-function getAuthToken(): string | null {
-  // Try to get from Keycloak instance first (if available)
-  if (typeof window !== 'undefined' && (window as unknown as { keycloak?: { token?: string } }).keycloak?.token) {
-    return (window as unknown as { keycloak: { token: string } }).keycloak.token;
-  }
-  // Fall back to sessionStorage where Keycloak stores tokens
-  return sessionStorage.getItem('kc_token') || localStorage.getItem('kc_token');
+interface UploadResponse {
+  success: boolean;
+  url?: string;
+  publicUrl?: string;
+  key: string;
 }
 
-/**
- * Upload organization logo
- */
-export async function uploadLogo(
-  file: File,
-  tenantId: string,
-): Promise<UploadResult> {
-  const token = getAuthToken();
-  if (!token) {
-    return { success: false, url: "", key: "", error: "Not authenticated" };
-  }
-
-  const formData = new FormData();
-  formData.append("file", file);
-
+async function uploadImage(path: string, file: File): Promise<UploadResult> {
+  const validation = validateImageFile(file);
+  if (!validation.valid) return { success: false, url: '', key: '', error: validation.error };
   try {
-    const apiUrl = config.api.baseUrl;
-    const response = await fetch(
-      `${apiUrl}/api/uploads/logo/${tenantId}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      },
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      return {
-        success: false,
-        url: "",
-        key: "",
-        error: errorData.message || `Upload failed: ${response.status}`,
-      };
+    const { data } = await api.upload<UploadResponse>(path, file);
+    const url = data?.url || data?.publicUrl;
+    if (data?.success !== true || !url || !data.key) {
+      throw new Error('The upload did not return a valid image. Please try again.');
     }
-
-    const data = await response.json();
-    return {
-      success: data.success,
-      url: data.url || data.publicUrl,
-      key: data.key,
-    };
+    return { success: true, url, key: data.key };
   } catch (error) {
-    return {
-      success: false,
-      url: "",
-      key: "",
-      error: error instanceof Error ? error.message : "Upload failed",
-    };
+    return { success: false, url: '', key: '', error: error instanceof Error ? error.message : 'Upload failed' };
   }
 }
 
-/**
- * Delete organization logo
- */
+async function deleteImage(path: string): Promise<boolean> {
+  try {
+    const { data } = await api.delete<{ success: boolean }>(path);
+    return data?.success === true;
+  } catch {
+    return false;
+  }
+}
+
+export async function uploadLogo(file: File, tenantId: string): Promise<UploadResult> {
+  if (!tenantId.trim()) return { success: false, url: '', key: '', error: 'Select an organization first.' };
+  return uploadImage(`/uploads/logo/${encodeURIComponent(tenantId)}`, file);
+}
+
 export async function deleteLogo(tenantId: string): Promise<boolean> {
-  const token = getAuthToken();
-  if (!token) {
-    return false;
-  }
-
-  try {
-    const apiUrl = config.api.baseUrl;
-    const response = await fetch(
-      `${apiUrl}/api/uploads/logo/${tenantId}`,
-      {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    );
-
-    if (!response.ok) {
-      return false;
-    }
-
-    const data = await response.json();
-    return data.success;
-  } catch {
-    return false;
-  }
+  return tenantId.trim() ? deleteImage(`/uploads/logo/${encodeURIComponent(tenantId)}`) : false;
 }
 
-/**
- * Upload user profile picture
- */
 export async function uploadProfilePicture(file: File): Promise<UploadResult> {
-  const token = getAuthToken();
-  if (!token) {
-    return { success: false, url: "", key: "", error: "Not authenticated" };
-  }
-
-  const formData = new FormData();
-  formData.append("file", file);
-
-  try {
-    const apiUrl = config.api.baseUrl;
-    const response = await fetch(
-      `${apiUrl}/api/uploads/profile-picture`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      },
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      return {
-        success: false,
-        url: "",
-        key: "",
-        error: errorData.message || `Upload failed: ${response.status}`,
-      };
-    }
-
-    const data = await response.json();
-    return {
-      success: data.success,
-      url: data.url || data.publicUrl,
-      key: data.key,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      url: "",
-      key: "",
-      error: error instanceof Error ? error.message : "Upload failed",
-    };
-  }
+  return uploadImage('/uploads/profile-picture', file);
 }
 
-/**
- * Delete user profile picture
- */
 export async function deleteProfilePicture(): Promise<boolean> {
-  const token = getAuthToken();
-  if (!token) {
-    return false;
-  }
-
-  try {
-    const apiUrl = config.api.baseUrl;
-    const response = await fetch(
-      `${apiUrl}/api/uploads/profile-picture`,
-      {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    );
-
-    if (!response.ok) {
-      return false;
-    }
-
-    const data = await response.json();
-    return data.success;
-  } catch {
-    return false;
-  }
+  return deleteImage('/uploads/profile-picture');
 }
 
 /**
@@ -201,6 +63,8 @@ export function validateImageFile(file: File): {
   valid: boolean;
   error?: string;
 } {
+  if (file.size === 0) return { valid: false, error: 'Choose a nonempty image file.' };
+
   // Check file size (max 5MB)
   const maxSizeMB = 5;
   if (file.size > maxSizeMB * 1024 * 1024) {

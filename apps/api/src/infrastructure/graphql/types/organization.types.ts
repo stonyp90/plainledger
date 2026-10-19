@@ -6,6 +6,7 @@
  */
 import { Field, ObjectType, ID, InputType, Int } from "@nestjs/graphql";
 import { GraphQLISODateTime } from "@nestjs/graphql";
+import { IsBoolean, IsInt, IsOptional, IsString, MaxLength, Min, Matches, IsTimeZone } from 'class-validator';
 
 // =====================================================
 // OBJECT TYPES
@@ -87,47 +88,60 @@ export class OrganizationFeatures {
 @InputType({ description: "Input for creating an organization" })
 export class CreateOrganizationInput {
   @Field()
+  @IsString() @MaxLength(255) @Matches(/\S/)
   name: string;
 
   @Field({ nullable: true })
+  @IsOptional() @IsString() @MaxLength(100)
   industry?: string;
 
   @Field({ nullable: true })
+  @IsOptional() @IsTimeZone() @MaxLength(100)
   timezone?: string;
 }
 
 @InputType({ description: "Input for updating an organization" })
 export class UpdateOrganizationInput {
   @Field({ nullable: true })
+  @IsOptional() @IsString() @MaxLength(255) @Matches(/\S/)
   name?: string;
 
   @Field({ nullable: true })
+  @IsOptional() @IsString() @MaxLength(100)
   industry?: string;
 
   @Field({ nullable: true })
+  @IsOptional() @IsTimeZone() @MaxLength(100)
   timezone?: string;
 }
 
 @InputType({ description: "Input for updating organization features" })
 export class UpdateOrganizationFeaturesInput {
   @Field({ nullable: true })
+  @IsOptional() @IsBoolean()
   analyticsEnabled?: boolean;
 
   @Field({ nullable: true })
+  @IsOptional() @IsBoolean()
   aiInsightsEnabled?: boolean;
 
   @Field({ nullable: true })
+  @IsOptional() @IsBoolean()
   multiCurrencyEnabled?: boolean;
 
   @Field({ nullable: true })
+  @IsOptional() @IsBoolean()
   customReportsEnabled?: boolean;
 
   @Field({ nullable: true })
+  @IsOptional() @IsBoolean()
   apiAccessEnabled?: boolean;
 
   @Field(() => Int, { nullable: true })
+  @IsOptional() @IsInt() @Min(-1)
   maxDataSources?: number;
 
   @Field(() => Int, { nullable: true })
+  @IsOptional() @IsInt() @Min(-1)
   maxUsers?: number;
 }

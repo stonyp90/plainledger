@@ -20,8 +20,8 @@ export function RateLimit(options: RateLimitOptions) {
     SetMetadata(RATE_LIMIT_KEY, options),
     Throttle({
       default: {
-        ttl: options.ttl || 60,
-        limit: options.limit || 100,
+        ttl: (options.ttl ?? 60) * 1000,
+        limit: options.limit ?? 100,
       },
     }),
   );

@@ -19,7 +19,7 @@ export interface FinancialTrendResult {
   trend: string;
 }
 export interface AccountResult {
-  id: string; code: string; name: string; type: string; balance: number; currency: string;
+  id: string; code: string; name: string; type: string; balance: number | null; currency: string;
   isActive: boolean; lastActivityAt?: string;
 }
 export interface PageResult<T> {
@@ -31,7 +31,7 @@ export interface TransactionResult {
   currency: string; contactName: string; createdAt: string;
 }
 export interface BalanceSheetLine {
-  accountCode: string; accountName: string; accountType: string; balance: number; level: number; isSubtotal: boolean;
+  accountCode: string; accountName: string; accountType: string; accountSubType?: string | null; balance: number; level: number; isSubtotal: boolean;
 }
 export interface BalanceSheetResult {
   asOfDate: string; organizationName: string; currency: string;
@@ -39,7 +39,7 @@ export interface BalanceSheetResult {
   totalAssets: number; totalLiabilities: number; totalEquity: number;
 }
 export interface IncomeStatementLine {
-  accountCode: string; accountName: string; amount: number; budget: number; variance: number; level: number;
+  accountCode: string; accountName: string; accountSubType?: string | null; amount: number; budget?: number | null; variance?: number | null; level: number;
 }
 export interface IncomeStatementResult {
   startDate: string; endDate: string; organizationName: string; currency: string;

@@ -80,7 +80,8 @@ interface CalculatorResults {
   }[];
 }
 
-export default function SREDCalculator() {
+export default function SREDCalculator({ headingLevel = 2 }: { headingLevel?: 1 | 2 }) {
+  const Heading = headingLevel === 1 ? 'h1' : 'h2';
   const { language } = useI18n();
   const isEn = language === 'en';
   
@@ -237,12 +238,12 @@ export default function SREDCalculator() {
             {isEn ? 'Free Calculator' : 'Calculateur gratuit'}
           </span>
         </div>
-        <h2 
+        <Heading
           className="text-2xl sm:text-3xl font-bold mb-3"
           style={{ color: 'rgb(var(--color-text))' }}
         >
           {isEn ? 'SR&ED Tax Credit Calculator' : 'Calculateur de crédit d\'impôt RSDE'}
-        </h2>
+        </Heading>
         <p 
           className="text-lg max-w-2xl mx-auto"
           style={{ color: 'rgb(var(--color-text-secondary))' }}

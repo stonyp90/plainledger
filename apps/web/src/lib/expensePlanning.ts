@@ -5,6 +5,7 @@
  */
 
 import { PlannedExpense, getExpenseCashImpact } from './strategicPlanning';
+import { isProjectionRequestValid, isPlannedExpenseValid } from './planningValidation';
 
 /**
  * Project cash flow based on planned expenses
@@ -22,6 +23,10 @@ export function projectCashFlow(
   expenses: number;
   confidence: number;
 }> {
+  if (!isProjectionRequestValid(currentCash, currentDate, months) || !Number.isFinite(baseRevenue) ||
+      !Array.isArray(expenses) || !expenses.every(isPlannedExpenseValid)) {
+    throw new RangeError('Forecast requires valid amounts, dates, and a horizon from 0 to 1200 months.');
+  }
   const projected: Array<{
     date: string;
     cash: number;
@@ -60,6 +65,9 @@ export function projectCashFlow(
       ? totalConfidence / expenseCount / 100 
       : 0.85;
     
+    if (![runningCash, monthRevenue, monthExpenses, confidence].every(Number.isFinite)) {
+      throw new RangeError('Forecast amounts exceed the supported numeric range.');
+    }
     projected.push({
       date: monthDate.toISOString(),
       cash: runningCash,

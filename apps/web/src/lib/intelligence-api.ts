@@ -54,7 +54,7 @@ export const intelligenceApi = {
    * Capture a new decision
    */
   captureDecision: (data: CaptureDecisionRequest) =>
-    apiClient.post<{ id: string; industry: string; createdAt: string }>('/v1/decisions', data),
+    apiClient.post<{ id: string; organizationId: string; industry: string; createdAt: string; reminderScheduled: boolean }>('/v1/decisions', data),
 
   /**
    * Record outcome for a decision

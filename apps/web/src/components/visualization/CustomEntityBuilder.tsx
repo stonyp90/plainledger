@@ -30,7 +30,7 @@ import {
   JoinConfig,
   generateId,
 } from '../../lib/visualizationTypes';
-import DataSourceSelector from './DataSourceSelector';
+import DataSourceSelector from './SchemaSourceSelector';
 import { JoinBuilder } from './JoinBuilder';
 
 interface CustomEntityBuilderProps {

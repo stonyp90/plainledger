@@ -17,6 +17,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
+import appConfig from '../lib/config';
 import { useTenant } from '../contexts/TenantContext';
 import stripeService, {
   type PricingPlan,
@@ -57,7 +58,7 @@ function PricingCard({
       style={{
         backgroundColor: 'rgb(var(--color-surface))',
         borderColor: plan.popular ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-border))',
-        ringColor: plan.popular ? 'rgb(var(--color-primary-500))' : undefined,
+        boxShadow: `0 0 0 2px ${plan.popular ? 'rgb(var(--color-primary-500))' : undefined}`,
       }}
     >
       {/* Badge */}
@@ -258,7 +259,7 @@ export default function SubscriptionManagement() {
   // Handle plan selection
   const handleSelectPlan = async (plan: PricingPlan) => {
     if (plan.tier === 'enterprise') {
-      stripeService.openContactSales();
+      window.location.assign(`mailto:${appConfig.support.email}?subject=${encodeURIComponent('Enterprise plan inquiry')}`);
       return;
     }
     

@@ -25,7 +25,7 @@ export default defineConfig({
   },
   projects: [
     { name: 'public', testMatch: /\.public\.spec\.ts$/, use: { ...devices['Desktop Chrome'] } },
-    { name: 'keycloak', testMatch: /keycloak-auth\.spec\.ts$/, use: { ...devices['Desktop Chrome'] } },
+    { name: 'keycloak', testMatch: /(?:keycloak-auth|real-ledger)\.spec\.ts$/, use: { ...devices['Desktop Chrome'] } },
   ],
   // An explicit target is always tested as-is, without starting a local app.
   webServer: process.env.BASE_URL ? undefined : {

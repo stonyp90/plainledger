@@ -9,6 +9,8 @@ import { Target, TrendingDown } from 'lucide-react';
 import { useI18n } from '../../lib/i18n';
 import { projectCashFlow } from '../../lib/expensePlanning';
 import { PlannedExpense } from '../../lib/strategicPlanning';
+import { ChartDataState } from '../charts/ChartDataState';
+import { chartExtent } from '../../lib/chartDataValidation';
 
 interface LiveCashChartProps {
   currentCash: number;
@@ -32,30 +34,17 @@ export default function LiveCashChart({
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [animatedData, setAnimatedData] = useState<Array<{ date: string; cash: number }>>([]);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>(undefined);
 
   // Calculate projected cash flow
-  const projectedData = useMemo(() => {
-    if (expenses.length === 0) {
-      // If no expenses, show flat line with base revenue
-      const data = [];
-      let runningCash = currentCash;
-      for (let i = 0; i < months; i++) {
-        const monthDate = new Date(currentDate);
-        monthDate.setMonth(monthDate.getMonth() + i);
-        runningCash += baseRevenue; // Only revenue, no expenses
-        data.push({
-          date: monthDate.toISOString(),
-          cash: runningCash,
-          revenue: baseRevenue,
-          expenses: 0,
-          confidence: 1,
-        });
-      }
-      return data;
+  const calculation = useMemo(() => {
+    try {
+      return { data: projectCashFlow(currentCash, currentDate, expenses, baseRevenue, months), invalid: false };
+    } catch {
+      return { data: [], invalid: true };
     }
-    return projectCashFlow(currentCash, currentDate, expenses, baseRevenue, months);
   }, [currentCash, currentDate, expenses, baseRevenue, months]);
+  const projectedData = calculation.data;
 
   // Animate data changes smoothly
   useEffect(() => {
@@ -65,7 +54,7 @@ export default function LiveCashChart({
 
     const targetData = projectedData.map(p => ({ date: p.date, cash: p.cash }));
     
-    if (animatedData.length === 0) {
+    if (animatedData.length === 0 || targetData.length === 0 || targetData.length > 200) {
       setAnimatedData(targetData);
       return;
     }
@@ -106,8 +95,7 @@ export default function LiveCashChart({
     };
   }, [projectedData, currentCash]);
 
-  const maxCash = Math.max(...animatedData.map(d => d.cash), currentCash);
-  const minCash = Math.min(...animatedData.map(d => d.cash), 0);
+  const { min: minCash, max: maxCash } = chartExtent([currentCash, ...animatedData.map(d => d.cash)], true);
   const range = maxCash - minCash || 1;
 
   const formatCurrency = (value: number) => {
@@ -123,7 +111,7 @@ export default function LiveCashChart({
     if (animatedData.length === 0) {
       return { x: 0, y: 200 };
     }
-    const x = (index / Math.max(animatedData.length - 1, 1)) * 800;
+    const x = animatedData.length === 1 ? 400 : (index / (animatedData.length - 1)) * 800;
     const cash = animatedData[index]?.cash ?? 0;
     const safeRange = range || 1; // Prevent division by zero
     const y = 200 - ((cash - minCash) / safeRange) * 180;
@@ -137,6 +125,10 @@ export default function LiveCashChart({
   // Find zero date
   const zeroIndex = animatedData.findIndex(d => d.cash <= 0);
   const zeroDate = zeroIndex >= 0 ? animatedData[zeroIndex]?.date : null;
+
+  if (calculation.invalid || projectedData.length === 0) {
+    return <ChartDataState title={isEn ? 'Cash Flow Impact' : 'Impact sur la trésorerie'} issue={calculation.invalid ? 'invalid' : 'empty'} isEn={isEn} />;
+  }
 
   return (
     <div className="card p-4 sm:p-6">
@@ -248,6 +240,7 @@ export default function LiveCashChart({
 
           {/* Data points */}
           {animatedData.length > 0 && animatedData.map((point, i) => {
+            if (i % Math.max(1, Math.ceil(animatedData.length / 150)) !== 0 && i !== animatedData.length - 1 && i !== hoveredIndex) return null;
             const { x, y } = getPointPosition(i);
             const isHovered = hoveredIndex === i;
             const isZero = point.cash <= 0;

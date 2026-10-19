@@ -140,8 +140,8 @@ export function useTransactions(filter?: TransactionFilter, pagination?: Paginat
 
 export function useBalanceSheet(asOfDate?: Date, options?: { skip?: boolean }) {
   return useQuery<{ balanceSheet: BalanceSheetResult }>(GET_BALANCE_SHEET, {
-    variables: { asOfDate: asOfDate?.toISOString() },
-    skip: options?.skip,
+    variables: { asOfDate: asOfDate && Number.isFinite(asOfDate.getTime()) ? asOfDate.toISOString() : undefined },
+    skip: options?.skip || (asOfDate !== undefined && !Number.isFinite(asOfDate.getTime())),
   });
 }
 
@@ -149,11 +149,11 @@ export function useIncomeStatement(startDate: Date, endDate: Date, options?: { s
   return useQuery<{ incomeStatement: IncomeStatementResult }>(GET_INCOME_STATEMENT, {
     variables: {
       dateRange: {
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
+        startDate: startDate && Number.isFinite(startDate.getTime()) ? startDate.toISOString() : undefined,
+        endDate: endDate && Number.isFinite(endDate.getTime()) ? endDate.toISOString() : undefined,
       },
     },
-    skip: options?.skip || !startDate || !endDate,
+    skip: options?.skip || !startDate || !endDate || !Number.isFinite(startDate.getTime()) || !Number.isFinite(endDate.getTime()) || startDate > endDate,
   });
 }
 

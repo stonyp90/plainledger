@@ -101,6 +101,10 @@ export interface TenantInvitation {
   invitedAt: string;
   expiresAt: string;
   status: 'pending' | 'accepted' | 'expired' | 'revoked';
+  /** Only returned when an invitation link is created or rotated. */
+  inviteUrl?: string;
+  deliveryStatus?: 'unsent' | 'queued' | 'failed';
+  deliveryMessage?: string;
 }
 
 interface TenantContextType {
@@ -128,7 +132,7 @@ interface TenantContextType {
   // Invitation operations
   getInvitations: () => Promise<TenantInvitation[]>;
   revokeInvitation: (invitationId: string) => Promise<void>;
-  resendInvitation: (invitationId: string) => Promise<void>;
+  resendInvitation: (invitationId: string) => Promise<TenantInvitation>;
 
   // Permission checks
   hasPermission: (permission: Permission) => boolean;
@@ -421,7 +425,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
   const rolesKey = (user?.roles ?? []).join(',');
   const mockMode = isMockAuthEnabled();
 
-  const loadTenants = useCallback(async () => {
+  const loadTenants = useCallback(async (): Promise<Tenant | null> => {
     const requestGeneration = ++generation.current;
     setIsLoading(true);
     setError(null);
@@ -431,16 +435,16 @@ export function TenantProvider({ children }: TenantProviderProps) {
     try {
       if (!authenticated) {
         await setActiveOrganizationId(null);
-        return;
+        return null;
       }
       if (mockMode) {
         const allowed = MOCK_TENANTS.filter(tenant => tenant.id === claimedTenant);
         const selected = allowed[0] ?? null;
         await setActiveOrganizationId(selected?.id ?? null);
-        if (requestGeneration !== generation.current) return;
+        if (requestGeneration !== generation.current) return null;
         setTenants(allowed);
         setCurrentTenantState(selected);
-        return;
+        return selected;
       }
       if (!claimedTenant) throw new Error('No organization is assigned to this account. Complete account setup before continuing.');
       await setActiveOrganizationId(claimedTenant);
@@ -449,7 +453,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
         api.get<OrganizationSettingsResponse>('/api/v1/settings/organization'),
         api.get<UserPermissionsData>('/api/users/me/permissions'),
       ]);
-      if (requestGeneration !== generation.current) return;
+      if (requestGeneration !== generation.current) return null;
       const organization = organizationResult.data;
       if (!organization || organization.tenantId !== claimedTenant || !organization.id) {
         throw new Error('The organization response does not match this signed-in account.');
@@ -471,12 +475,13 @@ export function TenantProvider({ children }: TenantProviderProps) {
         settings: {
           ...DEFAULT_SETTINGS, ...general,
           currency: general.currency || organization.currency,
+          fiscalYearEnd: general.fiscalYearEnd || `${String(organization.fiscalYearEndMonth).padStart(2, '0')}-${new Date(Date.UTC(2001, organization.fiscalYearEndMonth, 0)).getUTCDate()}`,
           demoMode: false,
           features: {
-            powerBI: entitled('powerbi'), aiInsights: entitled('ai:insights'),
-            customReports: entitled('reports:custom'), apiAccess: entitled('api:access'),
-            auditLogs: entitled('audit:logs'), webhooks: entitled('webhooks'),
-            sso: entitled('sso'), decisionCapture: entitled('decision:capture'),
+            powerBI: entitled('feature:power-bi'), aiInsights: entitled('feature:ai-insights'),
+            customReports: entitled('feature:custom-reports'), apiAccess: entitled('feature:api-access'),
+            auditLogs: entitled('feature:audit-logs'), webhooks: entitled('feature:webhooks'),
+            sso: entitled('feature:sso'), decisionCapture: entitled('feature:decision-capture'),
           },
           notifications: { ...DEFAULT_SETTINGS.notifications, ...general.notifications },
           branding: sourceSettings.brandingSettings ? {
@@ -487,9 +492,11 @@ export function TenantProvider({ children }: TenantProviderProps) {
         },
         limits: {
           ...PLAN_LIMITS[plan],
-          users: permissions.limits.maxUsers ?? PLAN_LIMITS[plan].users,
-          connections: permissions.limits.maxDataSources ?? PLAN_LIMITS[plan].connections,
-          reports: permissions.limits.maxReportsPerMonth ?? PLAN_LIMITS[plan].reports,
+          users: permissions.limits.users ?? PLAN_LIMITS[plan].users,
+          connections: permissions.limits.connections ?? PLAN_LIMITS[plan].connections,
+          reports: permissions.limits.reports ?? PLAN_LIMITS[plan].reports,
+          storage: permissions.limits.storage ?? PLAN_LIMITS[plan].storage,
+          apiCalls: permissions.limits.apiCalls ?? PLAN_LIMITS[plan].apiCalls,
           currentUsage: { users: 0, connections: 0, reports: 0, storage: 0, apiCalls: 0 },
         },
       };
@@ -497,12 +504,14 @@ export function TenantProvider({ children }: TenantProviderProps) {
       setTenants([selected]);
       setCurrentTenantState(selected);
       localStorage.setItem(STORAGE_KEY, selected.id);
+      return selected;
     } catch (cause) {
-      if (requestGeneration !== generation.current) return;
+      if (requestGeneration !== generation.current) return null;
       setError(cause instanceof Error ? cause.message : 'Unable to load your organization.');
       setCurrentTenantState(null);
       setTenants([]);
       await setActiveOrganizationId(null);
+      return null;
     } finally {
       if (requestGeneration === generation.current) setIsLoading(false);
     }
@@ -534,10 +543,9 @@ export function TenantProvider({ children }: TenantProviderProps) {
     await api.post<OrganizationResponse>('/api/organizations', {
       tenantId: claimedTenant, name: data.name, currency: data.settings?.currency || 'CAD',
     });
-    await loadTenants();
-    // Organization creation must also establish server-side membership. A saved
-    // organization alone cannot be represented as an authenticated tenant here.
-    throw new Error('Organization created. Complete membership setup, then reload your account.');
+    const created = await loadTenants();
+    if (!created) throw new Error('Organization was saved, but could not be loaded. Reload your account before continuing.');
+    return created;
   }, [claimedTenant, currentTenant, loadTenants]);
 
   const updateTenantSettings = useCallback(async (settings: Partial<TenantSettings>) => {
@@ -578,8 +586,8 @@ export function TenantProvider({ children }: TenantProviderProps) {
   const revokeInvitation = useCallback(async (invitationId: string) => {
     await api.delete(`${memberPath()}/invitations/${encodeURIComponent(invitationId)}`);
   }, [memberPath]);
-  const resendInvitation = useCallback(async (invitationId: string) => {
-    await api.post(`${memberPath()}/invitations/${encodeURIComponent(invitationId)}/resend`);
+  const resendInvitation = useCallback(async (invitationId: string): Promise<TenantInvitation> => {
+    return (await api.post<TenantInvitation>(`${memberPath()}/invitations/${encodeURIComponent(invitationId)}/resend`)).data;
   }, [memberPath]);
 
   const hasPermission = useCallback((permission: Permission) => {

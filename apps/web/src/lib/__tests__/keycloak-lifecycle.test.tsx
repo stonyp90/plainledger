@@ -63,6 +63,7 @@ async function mountAuth() {
   }
   render(<StrictMode><auth.KeycloakProvider><Probe /></auth.KeycloakProvider></StrictMode>);
   await screen.findByTestId('auth');
+  await waitFor(() => expect(context.initialized).toBe(true));
   return { auth, getContext: () => context };
 }
 
@@ -75,6 +76,31 @@ describe('Keycloak adapter lifecycle (SDK mocked, not an end-to-end login)', () 
     expect(client.init).toHaveBeenCalledTimes(1);
     expect(getContext().authenticated).toBe(false);
     expect(() => getContext().selectMockUser(auth.MOCK_USERS[0])).toThrow('Mock authentication is disabled');
+  });
+
+  it('renders public content while the identity provider is pending', async () => {
+    client.init.mockImplementationOnce(() => new Promise(() => {}));
+    const auth = await import('../keycloak');
+    function PublicPage() {
+      return <p>{auth.useKeycloak().initialized ? 'Initialized' : 'Public content is available'}</p>;
+    }
+    render(<auth.KeycloakProvider><PublicPage /></auth.KeycloakProvider>);
+    expect(screen.getByText('Public content is available')).toBeVisible();
+    expect(client.init).toHaveBeenCalledOnce();
+  });
+
+  it.each(['http://localhost:8080', 'http://127.0.0.1:8080', 'http://[::1]:8080'])('allows loopback %s for a production-build integration test', async url => {
+    vi.stubEnv('VITE_KEYCLOAK_URL', url);
+    const { getContext } = await mountAuth();
+    expect(client.init).toHaveBeenCalledOnce();
+    expect(getContext().authError).toBeNull();
+  });
+
+  it('rejects remote plain HTTP in a production build', async () => {
+    vi.stubEnv('VITE_KEYCLOAK_URL', 'http://identity.example.test');
+    const { getContext } = await mountAuth();
+    expect(client.init).not.toHaveBeenCalled();
+    expect(getContext().authError).toMatch(/unavailable/);
   });
 
   it('requires an explicit development flag before permitting mock auth', async () => {
@@ -115,7 +141,7 @@ describe('Keycloak adapter lifecycle (SDK mocked, not an end-to-end login)', () 
     expect(client.login).toHaveBeenCalledWith({ loginHint: 'viewer@example.test', redirectUri: window.location.origin + '/app' });
   });
 
-  it.each(['//attacker.example/path', 'javascript:alert(1)', '/login', '/signup'])('keeps unsafe or looping return %s inside the app', async requested => {
+  it.each(['//attacker.example/path', 'javascript:alert(1)', '/login', '/signup', '/login/', '/mfa/verify'])('keeps unsafe or looping return %s inside the app', async requested => {
     const { auth } = await mountAuth();
     expect(auth.getLoginRedirectUri(requested)).toBe(window.location.origin + '/app');
     expect(auth.getLoginRedirectUri('/app/settings?tab=security')).toBe(window.location.origin + '/app/settings?tab=security');

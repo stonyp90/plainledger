@@ -11,7 +11,7 @@ const client = {
 function json(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), { status, headers: { 'Content-Type': 'application/json' } });
 }
-function requestHeaders() { return new Headers(fetchMock.mock.calls.at(-1)![1].headers); }
+function requestHeaders() { return new Headers(fetchMock.mock.calls[fetchMock.mock.calls.length - 1][1].headers); }
 
 beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock);

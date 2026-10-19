@@ -98,7 +98,7 @@ export default function MontageFinancierPage() {
     
     if (!template || !montage) return;
     
-    const newSource = createFinancingSourceFromTemplate(template, amount);
+    const newSource = createFinancingSourceFromTemplate({ ...template, amount }, amount);
     
     setMontage({
       ...montage,

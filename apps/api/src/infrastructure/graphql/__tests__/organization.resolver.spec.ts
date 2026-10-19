@@ -1,315 +1,64 @@
-/**
- * Organization Resolver Tests
- */
-import { Test, TestingModule } from "@nestjs/testing";
-import { ForbiddenException } from "@nestjs/common";
-import { Reflector } from "@nestjs/core";
-import { ConfigService } from "@nestjs/config";
-import { OrganizationResolver } from "../resolvers/organization.resolver";
-import { GqlAuthGuard } from "../guards/gql-auth.guard";
-import { CreateOrganizationUseCase } from "@application/use-cases/create-organization.use-case";
-import { GetOrganizationUseCase } from "@application/use-cases/get-organization.use-case";
-import { UpdateOrgFeaturesUseCase } from "@application/use-cases/update-org-features.use-case";
+import { OrganizationResolver } from '../resolvers/organization.resolver';
+import { OrganizationFeaturePolicyService } from '@application/services/organization-feature-policy.service';
+import { OrganizationMembershipService } from '@application/services/organization-membership.service';
+import { AuthenticatedUser } from '@infrastructure/auth/keycloak-token';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
+import { CreateOrganizationInput, UpdateOrganizationFeaturesInput } from '../types/organization.types';
 
-// Mock the guard to always pass in tests
-const mockAuthGuard = {
-  canActivate: jest.fn().mockReturnValue(true),
-};
-
-describe("OrganizationResolver", () => {
+const actor: AuthenticatedUser = { sub: 'user-a', userId: 'user-a', email: 'owner@example.test', emailVerified: true, organizationId: 'stable-tenant-slug', roles: ['owner'] };
+const context = { req: { user: actor } };
+const organization = { id: 'org-uuid', tenantId: actor.organizationId, name: 'Company Name', industry: 'retail', createdAt: new Date('2026-01-01'), updatedAt: new Date('2026-01-02') };
+describe('Organization GraphQL persistence boundary', () => {
+  const policy = { authorize: jest.fn(), findOrganization: jest.fn(), readForActor: jest.fn(), flags: jest.fn(), update: jest.fn(), updateOrganization: jest.fn() };
+  const membership = { createOwnedOrganization: jest.fn() };
   let resolver: OrganizationResolver;
-  let createOrgUseCase: jest.Mocked<CreateOrganizationUseCase>;
-  let getOrgUseCase: jest.Mocked<GetOrganizationUseCase>;
-  let updateFeaturesUseCase: jest.Mocked<UpdateOrgFeaturesUseCase>;
-
-  const mockOrganization = {
-    id: "org-123",
-    tenantId: "org-123",
-    name: "Test Company",
-    industry: "Technology",
-    fiscalYearEndMonth: 12,
-    currency: "CAD",
-    createdAt: "2026-01-01T00:00:00Z",
-    updatedAt: "2026-01-15T00:00:00Z",
-  };
-
-  const mockContext = {
-    req: {
-      user: {
-        sub: "user-456",
-        email: "admin@example.com",
-        organizationId: "org-123",
-        roles: ["admin", "user"],
-      },
-    },
-  };
-
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        OrganizationResolver,
-        {
-          provide: CreateOrganizationUseCase,
-          useValue: {
-            execute: jest.fn().mockResolvedValue(mockOrganization),
-          },
-        },
-        {
-          provide: GetOrganizationUseCase,
-          useValue: {
-            execute: jest.fn().mockResolvedValue(mockOrganization),
-          },
-        },
-        {
-          provide: UpdateOrgFeaturesUseCase,
-          useValue: {
-            execute: jest.fn().mockResolvedValue(undefined),
-          },
-        },
-        {
-          provide: Reflector,
-          useValue: { get: jest.fn() },
-        },
-        {
-          provide: ConfigService,
-          useValue: { get: jest.fn() },
-        },
-      ],
-    })
-      .overrideGuard(GqlAuthGuard)
-      .useValue(mockAuthGuard)
-      .compile();
-
-    resolver = module.get<OrganizationResolver>(OrganizationResolver);
-    createOrgUseCase = module.get(CreateOrganizationUseCase);
-    getOrgUseCase = module.get(GetOrganizationUseCase);
-    updateFeaturesUseCase = module.get(UpdateOrgFeaturesUseCase);
+  beforeEach(() => {
+    jest.resetAllMocks();
+    policy.authorize.mockResolvedValue({ organization });
+    policy.findOrganization.mockResolvedValue(organization);
+    policy.readForActor.mockResolvedValue({ policy: { configuration: 'persisted' } });
+    policy.flags.mockReturnValue({ organizationId: organization.id, analyticsEnabled: false, aiInsightsEnabled: false, multiCurrencyEnabled: true, customReportsEnabled: false, apiAccessEnabled: false, maxDataSources: 1, maxUsers: 2 });
+    policy.updateOrganization.mockResolvedValue({ ...organization, name: 'Saved name' });
+    policy.update.mockResolvedValue({ configuration: 'saved policy' });
+    membership.createOwnedOrganization.mockResolvedValue(organization);
+    resolver = new OrganizationResolver(policy as unknown as OrganizationFeaturePolicyService, membership as unknown as OrganizationMembershipService);
   });
-
-  describe("getOrganization", () => {
-    it("should return the current user organization", async () => {
-      const result = await resolver.getOrganization(mockContext);
-
-      expect(result).toBeDefined();
-      expect(result.id).toBe("org-123");
-      expect(result.name).toBe("Test Company");
-      expect(getOrgUseCase.execute).toHaveBeenCalledWith({
-        tenantId: "org-123",
-      });
-    });
+  it('returns the actual tenant slug rather than deriving identity from display name', async () => {
+    expect((await resolver.getOrganization(context)).slug).toBe('stable-tenant-slug');
+    expect(policy.authorize).toHaveBeenCalledWith(actor);
   });
-
-  describe("getOrganizationById", () => {
-    it("should allow access to own organization", async () => {
-      const result = await resolver.getOrganizationById("org-123", mockContext);
-
-      expect(result).toBeDefined();
-      expect(result?.id).toBe("org-123");
-    });
-
-    it("should allow platform-admin access to any organization", async () => {
-      const adminContext = {
-        req: {
-          user: {
-            organizationId: "different-org",
-            roles: ["platform-admin"],
-          },
-        },
-      };
-
-      const result = await resolver.getOrganizationById(
-        "org-123",
-        adminContext,
-      );
-
-      expect(result).toBeDefined();
-    });
-
-    it("should deny non-admin access to other organizations", async () => {
-      const userContext = {
-        req: {
-          user: {
-            organizationId: "different-org",
-            roles: ["user"],
-          },
-        },
-      };
-
-      await expect(
-        resolver.getOrganizationById("org-123", userContext),
-      ).rejects.toThrow(ForbiddenException);
-    });
+  it('uses the scoped lookup and propagates authorization or database errors', async () => {
+    policy.findOrganization.mockRejectedValueOnce(new Error('Access denied'));
+    await expect(resolver.getOrganizationById('foreign-org', context)).rejects.toThrow('Access denied');
+    expect(policy.findOrganization).toHaveBeenCalledWith(actor, 'foreign-org');
   });
-
-  describe("getOrganizationFeatures", () => {
-    it("should return feature flags for organization", async () => {
-      const result = await resolver.getOrganizationFeatures(mockContext);
-
-      expect(result).toBeDefined();
-      expect(result.organizationId).toBe("org-123");
-      expect(result.analyticsEnabled).toBe(true);
-      expect(result.maxDataSources).toBe(5);
-    });
+  it('returns null only when the authorized organization lookup found no row', async () => {
+    policy.findOrganization.mockResolvedValue(null);
+    await expect(resolver.getOrganizationById('missing-org', context)).resolves.toBeNull();
   });
-
-  describe("createOrganization", () => {
-    it("should create a new organization", async () => {
-      const input = {
-        name: "New Company",
-        industry: "Finance",
-      };
-
-      const result = await resolver.createOrganization(input, mockContext);
-
-      expect(result).toBeDefined();
-      expect(createOrgUseCase.execute).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: "New Company",
-          industry: "Finance",
-        }),
-      );
-    });
+  it('uses persisted effective policy instead of invented flags and limits', async () => {
+    await expect(resolver.getOrganizationFeatures(context)).resolves.toMatchObject({ analyticsEnabled: false, multiCurrencyEnabled: true, maxDataSources: 1, maxUsers: 2 });
+    expect(policy.flags).toHaveBeenCalledWith({ configuration: 'persisted' });
   });
-
-  describe("updateOrganization", () => {
-    it("should update organization for admin", async () => {
-      const input = { name: "Updated Name" };
-
-      const result = await resolver.updateOrganization(input, mockContext);
-
-      expect(result).toBeDefined();
-      expect(result.name).toBe("Updated Name");
-    });
-
-    it("should deny update for non-admin users", async () => {
-      const userContext = {
-        req: {
-          user: {
-            organizationId: "org-123",
-            roles: ["user"],
-          },
-        },
-      };
-
-      await expect(
-        resolver.updateOrganization({ name: "New Name" }, userContext),
-      ).rejects.toThrow(ForbiddenException);
-    });
-
-    it("should allow update for owners", async () => {
-      const ownerContext = {
-        req: {
-          user: {
-            organizationId: "org-123",
-            roles: ["owner"],
-          },
-        },
-      };
-
-      const result = await resolver.updateOrganization(
-        { name: "Owner Updated" },
-        ownerContext,
-      );
-
-      expect(result).toBeDefined();
-    });
+  it('creates an organization with a transactional owner binding to the verified claim', async () => {
+    await resolver.createOrganization({ name: 'Company Name', industry: 'retail' }, context);
+    expect(membership.createOwnedOrganization).toHaveBeenCalledWith(actor, { name: 'Company Name', industry: 'retail', tenantId: actor.organizationId });
   });
-
-  describe("updateOrganizationFeatures", () => {
-    it("should allow platform-admin to update features", async () => {
-      const platformAdminContext = {
-        req: {
-          user: {
-            roles: ["platform-admin"],
-          },
-        },
-      };
-
-      const input = {
-        analyticsEnabled: true,
-        maxDataSources: 10,
-      };
-
-      const result = await resolver.updateOrganizationFeatures(
-        "org-123",
-        input,
-        platformAdminContext,
-      );
-
-      expect(result).toBeDefined();
-      expect(updateFeaturesUseCase.execute).toHaveBeenCalledWith(
-        expect.objectContaining({
-          organizationId: "org-123",
-        }),
-      );
-    });
-
-    it("should deny feature updates for regular admins", async () => {
-      await expect(
-        resolver.updateOrganizationFeatures(
-          "org-123",
-          { maxDataSources: 100 },
-          mockContext,
-        ),
-      ).rejects.toThrow(ForbiddenException);
-    });
+  it('returns the saved organization, and never acknowledges failed persistence', async () => {
+    expect((await resolver.updateOrganization({ name: 'Submitted name' }, context)).name).toBe('Saved name');
+    policy.updateOrganization.mockRejectedValueOnce(new Error('Write failed'));
+    await expect(resolver.updateOrganization({ name: 'Submitted name' }, context)).rejects.toThrow('Write failed');
   });
-});
-
-describe("OrganizationResolver Security", () => {
-  it("should enforce tenant isolation - users cannot access other orgs", async () => {
-    const mockOrg = {
-      id: "org-123",
-      tenantId: "org-123",
-      name: "Test",
-      currency: "CAD",
-      fiscalYearEndMonth: 12,
-      createdAt: "2026-01-01T00:00:00Z",
-      updatedAt: "2026-01-01T00:00:00Z",
-    };
-
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        OrganizationResolver,
-        {
-          provide: CreateOrganizationUseCase,
-          useValue: { execute: jest.fn() },
-        },
-        {
-          provide: GetOrganizationUseCase,
-          useValue: { execute: jest.fn().mockResolvedValue(mockOrg) },
-        },
-        {
-          provide: UpdateOrgFeaturesUseCase,
-          useValue: { execute: jest.fn() },
-        },
-        {
-          provide: Reflector,
-          useValue: { get: jest.fn() },
-        },
-        {
-          provide: ConfigService,
-          useValue: { get: jest.fn() },
-        },
-      ],
-    })
-      .overrideGuard(GqlAuthGuard)
-      .useValue({ canActivate: jest.fn().mockReturnValue(true) })
-      .compile();
-
-    const resolver = module.get<OrganizationResolver>(OrganizationResolver);
-
-    const userContext = {
-      req: {
-        user: {
-          organizationId: "user-org",
-          roles: ["user"],
-        },
-      },
-    };
-
-    await expect(
-      resolver.getOrganizationById("other-org", userContext),
-    ).rejects.toThrow(ForbiddenException);
+  it('updates only supplied flags without enabling unrelated analytics providers', async () => {
+    await resolver.updateOrganizationFeatures(organization.id, { analyticsEnabled: false, maxUsers: 0 }, context);
+    expect(policy.update).toHaveBeenCalledWith(actor, organization.id, { plainledger: { enabled: false } }, { maxUsers: 0 });
+    expect(policy.flags).toHaveBeenCalledWith({ configuration: 'saved policy' });
+  });
+  it.each([{ name: ' ' }, { name: 'x'.repeat(256) }, { name: 'Name', timezone: 'not/a-timezone' }])('rejects invalid organization input %j', async (input) => {
+    expect((await validate(plainToInstance(CreateOrganizationInput, input))).length).toBeGreaterThan(0);
+  });
+  it.each([{ maxUsers: -2 }, { maxDataSources: 1.5 }, { analyticsEnabled: 'true' }])('rejects wrong feature input %j', async (input) => {
+    expect((await validate(plainToInstance(UpdateOrganizationFeaturesInput, input))).length).toBeGreaterThan(0);
   });
 });

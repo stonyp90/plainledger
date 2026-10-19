@@ -11,7 +11,8 @@ const keycloakUrl = import.meta.env.VITE_KEYCLOAK_URL || (import.meta.env.DEV ? 
 const isKeycloakConfigured = (() => {
   try {
     const url = new URL(keycloakUrl);
-    return url.protocol === 'https:' || (import.meta.env.DEV && url.protocol === 'http:');
+    const isLoopback = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
+    return url.protocol === 'https:' || (url.protocol === 'http:' && (import.meta.env.DEV || isLoopback));
   } catch {
     return false;
   }
@@ -28,7 +29,7 @@ export function getLoginRedirectUri(requested?: string | null): string {
   const fallback = new URL('/app', window.location.origin).href;
   try {
     const target = new URL(requested || '/app', window.location.origin);
-    if (target.origin !== window.location.origin || ['/login', '/signin', '/signup', '/register'].includes(target.pathname)) return fallback;
+    if (target.origin !== window.location.origin || ['/login', '/signin', '/signup', '/register', '/mfa/verify'].includes(target.pathname.replace(/\/+$/, ''))) return fallback;
     return target.href;
   } catch {
     return fallback;

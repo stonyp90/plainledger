@@ -1,12 +1,15 @@
 import {
   Injectable, CanActivate, ExecutionContext, UnauthorizedException, Logger,
-  Inject, SetMetadata, HttpException, HttpStatus, OnModuleDestroy,
+  Inject, SetMetadata, HttpException, HttpStatus, OnModuleDestroy, ForbiddenException,
 } from "@nestjs/common";
 import { GqlExecutionContext } from "@nestjs/graphql";
 import { Reflector } from "@nestjs/core";
 import { ConfigService } from "@nestjs/config";
 import { KEYCLOAK_INSTANCE } from "nest-keycloak-connect";
 import * as KeycloakConnect from "keycloak-connect";
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { UserProfileEntity } from '@infrastructure/persistence/postgres/entities/user-profile.entity';
 import { assertSelectedOrganization, extractBearerToken, isDevelopmentAuthBypass, verifyKeycloakAccessToken } from "../../auth/keycloak-token";
 
 @Injectable()
@@ -19,6 +22,7 @@ export class GqlAuthGuard implements CanActivate, OnModuleDestroy {
     private readonly reflector: Reflector,
     private readonly configService: ConfigService,
     @Inject(KEYCLOAK_INSTANCE) private readonly keycloak: KeycloakConnect.Keycloak,
+    @InjectRepository(UserProfileEntity) private readonly profiles: Repository<UserProfileEntity>,
   ) {
     this.cleanupTimer = setInterval(() => {
       for (const [key, entry] of this.rateLimits) {
@@ -48,6 +52,16 @@ export class GqlAuthGuard implements CanActivate, OnModuleDestroy {
         this.configService.get<string>("DEMO_ORG_ID") || "demo-org",
     } : await verifyKeycloakAccessToken(extractBearerToken(req.headers.authorization), this.keycloak, this.configService);
     assertSelectedOrganization(req.headers["x-organization-id"], user.organizationId);
+
+    if (!isDevelopmentAuthBypass(this.configService)) {
+      const profile = await this.profiles.findOne({ where: { id: user.sub, isActive: true }, relations: ['organization'] });
+      if (!profile?.organizationId || !profile.organization || profile.organization.deletedAt || profile.organization.tenantId !== user.organizationId) {
+        throw new ForbiddenException('Active membership in the authenticated organization is required');
+      }
+      // Mutations below this guard must not retain an owner/admin role after a DB demotion.
+      const tenantRoles = new Set(['owner', 'admin', 'member', 'viewer', 'accountant', 'user', 'organization_admin', 'plainledger_user', 'business_unit_admin']);
+      user.roles = [...user.roles.filter((role) => !tenantRoles.has(role)), 'user', profile.role || 'viewer'];
+    }
 
     const now = Date.now();
     let entry = this.rateLimits.get(user.sub);

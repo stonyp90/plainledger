@@ -10,7 +10,7 @@
  * - Rate limiting applied to prevent abuse
  */
 import { Resolver, Query, Args, Context, Mutation } from "@nestjs/graphql";
-import { UseGuards, Logger, Injectable, Inject } from "@nestjs/common";
+import { UseGuards, Logger, Injectable, Inject, BadRequestException, UnprocessableEntityException } from "@nestjs/common";
 import { Unprotected } from "nest-keycloak-connect";
 import { GqlAuthGuard } from "../guards/gql-auth.guard";
 import { IDatalakeDataService } from "@application/ports/outbound/IDatalakeDataService";
@@ -50,6 +50,7 @@ import {
 } from "@infrastructure/services/datalake-data.service";
 import { GenerateBalanceSheetUseCase } from "@application/use-cases/generate-balance-sheet.use-case";
 import { GenerateIncomeStatementUseCase } from "@application/use-cases/generate-income-statement.use-case";
+import { validateReportDates } from '@application/use-cases/financial-report-validation';
 import { reportPagination, authenticatedOrganization, validateFinancialFilter } from "../validation/financial-query-validation";
 
 // Paginated response wrapper
@@ -111,36 +112,36 @@ export class FinancialResolver {
     this.logger.log(`Fetching dashboard summary for org: ${organizationId}`);
 
     try {
-      const data = await this.datalakeService.getDashboardData(organizationId);
+      const range = this.dashboardRange(filter);
+      const data = await this.datalakeService.getDashboardData(organizationId, range.endDate, filter?.industryId, range.startDate);
       const summary = data.summary;
-
-      // Map to GraphQL type
+      const currency = data.currency;
+      if (!currency) throw new UnprocessableEntityException('The reporting currency is unavailable');
+      let previous: typeof data | undefined;
+      if (filter?.compareWithPrevious && range.startDate) {
+        const duration = range.endDate.getTime() - range.startDate.getTime() + 86_400_000;
+        const previousEnd = new Date(range.startDate.getTime() - 86_400_000);
+        const previousStart = new Date(previousEnd.getTime() - duration + 86_400_000);
+        previous = await this.datalakeService.getDashboardData(organizationId, previousEnd, filter.industryId, previousStart);
+      }
+      const cashChange = data.cashMovements && previous?.cashMovements ? this.percentChange(data.cashMovements.netCashFlow, previous.cashMovements.netCashFlow) : undefined;
       return {
-        totalRevenue: { amount: summary.totalRevenue, currency: "CAD" },
-        totalExpenses: { amount: summary.totalExpenses, currency: "CAD" },
-        netIncome: { amount: summary.netIncome, currency: "CAD" },
-        cashOnHand: { amount: summary.cashBalance || 0, currency: "CAD" },
-        accountsReceivable: {
-          amount: summary.accountsReceivable || 0,
-          currency: "CAD",
-        },
-        accountsPayable: {
-          amount: summary.accountsPayable || 0,
-          currency: "CAD",
-        },
-        cashFlow: {
-          inflows: { amount: summary.totalRevenue, currency: "CAD" },
-          outflows: { amount: summary.totalExpenses, currency: "CAD" },
-          netCashFlow: {
-            amount: summary.totalRevenue - summary.totalExpenses,
-            currency: "CAD",
-          },
-          changePercent: 0,
-          trend: TrendDirection.FLAT,
-        },
-        keyMetrics: this.buildKeyMetrics(summary),
-        asOfDate: new Date(),
-        periodLabel: filter?.period || "This Month",
+        totalRevenue: { amount: summary.totalRevenue, currency },
+        totalExpenses: { amount: summary.totalExpenses, currency },
+        netIncome: { amount: summary.netIncome, currency },
+        cashOnHand: { amount: summary.cashBalance, currency },
+        accountsReceivable: { amount: summary.accountsReceivable, currency },
+        accountsPayable: { amount: summary.accountsPayable, currency },
+        cashFlow: data.cashMovements ? {
+          inflows: { amount: data.cashMovements.inflows, currency },
+          outflows: { amount: data.cashMovements.outflows, currency },
+          netCashFlow: { amount: data.cashMovements.netCashFlow, currency },
+          changePercent: cashChange,
+          trend: cashChange === undefined ? undefined : this.calculateTrend(cashChange),
+        } : undefined,
+        keyMetrics: this.buildKeyMetrics(summary, previous?.summary),
+        asOfDate: new Date(data.asOfDate),
+        periodLabel: range.startDate ? `${range.startDate.toISOString().slice(0, 10)} to ${range.endDate.toISOString().slice(0, 10)}` : `All recorded history through ${range.endDate.toISOString().slice(0, 10)}`,
       };
     } catch (error) {
       this.logger.error(`Failed to fetch dashboard: ${error}`);
@@ -163,7 +164,9 @@ export class FinancialResolver {
     );
 
     try {
-      const data = await this.datalakeService.getDashboardData(organizationId);
+      if (!Array.isArray(metrics) || metrics.length > 10 || metrics.some((metric) => typeof metric !== 'string' || !['revenue', 'expenses', 'cashflow'].includes(metric.toLowerCase()))) throw new BadRequestException('Unsupported financial trend metric');
+      if (dateRange) validateReportDates(dateRange.endDate, dateRange.startDate);
+      const data = await this.datalakeService.getDashboardData(organizationId, dateRange?.endDate, undefined, dateRange?.startDate);
       const trends = data.trends;
 
       // Type-safe metric key mapping to handle case variations
@@ -190,7 +193,7 @@ export class FinancialResolver {
             value: point.value,
           })),
           periodChangePercent: periodChange,
-          trend: this.calculateTrend(periodChange),
+          trend: periodChange === undefined ? undefined : this.calculateTrend(periodChange),
         };
       });
     } catch (error) {
@@ -254,7 +257,7 @@ export class FinancialResolver {
           code: a.account_code,
           name: a.account_name,
           type: a.account_type as AccountType,
-          balance: 0, // Would come from balances
+          balance: data.balances.find((balance) => balance.account_key === a.account_key)?.closing_balance,
           currency: "CAD",
           isActive: a.is_active,
         })),
@@ -298,7 +301,7 @@ export class FinancialResolver {
         code: account.account_code,
         name: account.account_name,
         type: account.account_type as AccountType,
-        balance: 0,
+        balance: data.balances.find((balance) => balance.account_key === account.account_key)?.closing_balance,
         currency: "CAD",
         isActive: account.is_active,
       };
@@ -922,38 +925,37 @@ export class FinancialResolver {
     return TrendDirection.FLAT;
   }
 
-  private calculatePeriodChange(data: { value: number }[]): number {
-    if (data.length < 2) return 0;
-    const current = data[data.length - 1].value;
-    const previous = data[data.length - 2].value;
-    if (previous === 0) return 0;
-    return ((current - previous) / previous) * 100;
+  private percentChange(current: number, previous: number): number | undefined {
+    return previous === 0 ? undefined : ((current - previous) / Math.abs(previous)) * 100;
   }
 
-  private buildKeyMetrics(summary: {
-    totalRevenue: number;
-    totalExpenses: number;
-    netIncome: number;
-  }): MetricWithTrend[] {
-    return [
-      {
-        name: "Revenue",
-        currentValue: summary.totalRevenue,
-        changePercent: 0,
-        direction: TrendDirection.FLAT,
-      },
-      {
-        name: "Expenses",
-        currentValue: summary.totalExpenses,
-        changePercent: 0,
-        direction: TrendDirection.FLAT,
-      },
-      {
-        name: "Net Income",
-        currentValue: summary.netIncome,
-        changePercent: 0,
-        direction: TrendDirection.FLAT,
-      },
-    ];
+  private calculatePeriodChange(data: { value: number }[]): number | undefined {
+    if (data.length < 2) return undefined;
+    return this.percentChange(data[data.length - 1].value, data[data.length - 2].value);
+  }
+
+  private buildKeyMetrics(summary: { totalRevenue: number; totalExpenses: number; netIncome: number }, previous?: typeof summary): MetricWithTrend[] {
+    return ([['Revenue', 'totalRevenue'], ['Expenses', 'totalExpenses'], ['Net Income', 'netIncome']] as const).map(([name, key]) => {
+      const changePercent = previous ? this.percentChange(summary[key], previous[key]) : undefined;
+      return { name, currentValue: summary[key], previousValue: previous?.[key], changePercent,
+        direction: changePercent === undefined ? undefined : this.calculateTrend(changePercent) };
+    });
+  }
+
+  private dashboardRange(filter?: DashboardFilterInput): { startDate?: Date; endDate: Date } {
+    if (filter?.dateRange) {
+      validateReportDates(filter.dateRange.endDate, filter.dateRange.startDate);
+      return { startDate: filter.dateRange.startDate, endDate: filter.dateRange.endDate };
+    }
+    const now = new Date();
+    const endDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const period = filter?.period || 'month';
+    let startDate: Date | undefined;
+    if (period === 'month') startDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    else if (period === 'quarter') startDate = new Date(Date.UTC(now.getUTCFullYear(), Math.floor(now.getUTCMonth() / 3) * 3, 1));
+    else if (period === 'year') startDate = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
+    else if (period === 'week') startDate = new Date(endDate.getTime() - ((endDate.getUTCDay() + 6) % 7) * 86_400_000);
+    else if (period !== 'all') throw new BadRequestException('Unsupported dashboard reporting period');
+    return { startDate, endDate };
   }
 }

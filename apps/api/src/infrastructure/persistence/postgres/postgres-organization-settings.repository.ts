@@ -2,6 +2,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { OrganizationSettingsEntity } from "./entities/organization-settings.entity";
+import { validateOrganizationSettings } from '@infrastructure/services/settings-validation';
 
 export interface UpdateOrganizationSettingsInput {
   thresholdSettings?: OrganizationSettingsEntity["thresholdSettings"];
@@ -40,6 +41,7 @@ export class PostgresOrganizationSettingsRepository {
     organizationId: string,
     input: UpdateOrganizationSettingsInput,
   ): Promise<OrganizationSettingsEntity> {
+    validateOrganizationSettings(input);
     const existing = await this.findByOrganizationId(organizationId);
 
     if (existing) {
@@ -67,7 +69,11 @@ export class PostgresOrganizationSettingsRepository {
       // Create new
       const settings = this.repository.create({
         organizationId,
-        ...input,
+        thresholdSettings: input.thresholdSettings,
+        brandingSettings: input.brandingSettings,
+        notificationIntegrations: input.notificationIntegrations,
+        analyticsConfig: input.analyticsConfig,
+        generalSettings: input.generalSettings,
       });
 
       const saved = await this.repository.save(settings);

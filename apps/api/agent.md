@@ -1058,6 +1058,17 @@ npm run lint
 
 ## Self-Improvement
 
+### Authentication, tenant policy, and accounting snapshots (October 2026)
+
+- Import `AuthenticationModule` for the shared Keycloak verifier. Its global exports allow guards in feature modules to resolve `KEYCLOAK_INSTANCE`; do not register an independent verifier in each module.
+- The signed `organizationId` claim and `X-Organization-ID` header carry the tenant slug. Resolve it through the active user's profile before accessing UUID-based database rows. Tenant role decisions come from current database membership; signed platform/client roles remain distinct.
+- New organizations, owner profiles, and organization feature configuration are one transaction. Plan entitlements and organization overrides are read through `OrganizationFeaturePolicyService`; missing policy is an error, never an invented free-plan or enabled-feature response.
+- OAuth state is tenant- and subject-bound, expires in Redis, and is consumed once. Accounting credentials use authenticated encryption with organization, connection, and token-kind binding. Check connection limits again under the organization lock before saving a callback.
+- A successful accounting sync means the complete ledger reconciles to its source trial balance and the database transaction publishes an immutable Gold manifest. Read its exact object hashes/counts and cache by manifest run ID. Never mix older contact/invoice/balance files into a new ledger-only snapshot.
+- Keep debit/credit signs and report dates authoritative. Profit is not cash flow; cash movement classification must be supported by balanced source transactions. Missing data, a valid empty snapshot, and unavailable measurements are distinct states.
+- Settings repositories whitelist fields on both inserts and updates. Bound organization/user identifiers must never be spread from request bodies. Reject unknown fields and invalid finite threshold values with HTTP 400.
+- Production builds use `tsconfig.build.json` with `src` as the root, resolve aliases during the build, and copy email assets to `dist/templates`. Readiness is `/health/ready`.
+
 **Update this file when:**
 - Discovering better patterns
 - Fixing recurring issues

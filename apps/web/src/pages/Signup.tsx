@@ -1,57 +1,10 @@
-/**
- * Signup Page - Unified 3-Step Signup Flow
- * Step 1: Account Info (email, name, password)
- * Step 2: Organization + Industry
- * Step 3: Invite Team
- */
-
-import { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import {
-  Eye,
-  EyeOff,
-  Check,
-  X,
-  AlertCircle,
-  Loader2,
-  ArrowRight,
-  Shield,
-  Mail,
-  User,
-  Lock,
-  MapPin,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  CheckCircle,
-  PartyPopper,
-} from 'lucide-react';
-import { useTheme } from '../contexts/ThemeContext';
-import { useI18n } from '../lib/i18n';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { AlertCircle, CheckCircle2, Eye, EyeOff, Loader2, Shield } from 'lucide-react';
 import PublicHeader from '../components/PublicHeader';
-import Checkbox from '../components/Checkbox';
-import TermsModal from '../components/TermsModal';
-import { analytics } from '../lib/analytics';
-import { CompanyInfoStep, IndustryPreviewStep, InviteTeamStep, type OnboardingData } from '../components/Onboarding';
+import { useI18n } from '../lib/i18n';
+import api from '../lib/api';
 
-// =====================================================
-// TYPES
-// =====================================================
-
-interface SignupFormData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-  province: string;
-  agreeToTerms: boolean;
-}
-
-type SignupStep = 1 | 2 | 3 | 'success';
-
-// Canadian Provinces and Territories
 const CANADIAN_PROVINCES = [
   { code: 'AB', name: 'Alberta', nameFr: 'Alberta' },
   { code: 'BC', name: 'British Columbia', nameFr: 'Colombie-Britannique' },
@@ -68,755 +21,145 @@ const CANADIAN_PROVINCES = [
   { code: 'YT', name: 'Yukon', nameFr: 'Yukon' },
 ];
 
-interface PasswordRequirement {
-  id: string;
-  label: string;
-  labelFr: string;
-  check: (password: string) => boolean;
+
+interface SignupFields {
+  firstName: string; lastName: string; email: string; organizationName: string;
+  province: string; password: string; confirmPassword: string; agreeToTerms: boolean;
 }
-
-// =====================================================
-// CONSTANTS
-// =====================================================
-
-const PASSWORD_REQUIREMENTS: PasswordRequirement[] = [
-  {
-    id: 'length',
-    label: 'At least 12 characters',
-    labelFr: 'Au moins 12 caractères',
-    check: (p) => p.length >= 12,
-  },
-  {
-    id: 'uppercase',
-    label: 'One uppercase letter',
-    labelFr: 'Une lettre majuscule',
-    check: (p) => /[A-Z]/.test(p),
-  },
-  {
-    id: 'lowercase',
-    label: 'One lowercase letter',
-    labelFr: 'Une lettre minuscule',
-    check: (p) => /[a-z]/.test(p),
-  },
-  {
-    id: 'number',
-    label: 'One number',
-    labelFr: 'Un chiffre',
-    check: (p) => /\d/.test(p),
-  },
-  {
-    id: 'special',
-    label: 'One special character (!@#$%^&*)',
-    labelFr: 'Un caractère spécial (!@#$%^&*)',
-    check: (p) => /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(p),
-  },
+interface RegistrationResult {
+  success: boolean; userId: string; email: string;
+  requiresEmailVerification: boolean; verificationEmailSent: boolean;
+}
+interface InvitationPreview { tenantId: string; organizationName: string; email: string; expiresAt: string; }
+const EMPTY_FORM: SignupFields = { firstName: '', lastName: '', email: '', organizationName: '', province: '', password: '', confirmPassword: '', agreeToTerms: false };
+const PASSWORD_RULES = [
+  { en: 'At least 12 characters', fr: 'Au moins 12 caractères', check: (p: string) => p.length >= 12 },
+  { en: 'One uppercase letter', fr: 'Une lettre majuscule', check: (p: string) => /[A-Z]/.test(p) },
+  { en: 'One lowercase letter', fr: 'Une lettre minuscule', check: (p: string) => /[a-z]/.test(p) },
+  { en: 'One number', fr: 'Un chiffre', check: (p: string) => /\d/.test(p) },
+  { en: 'One special character', fr: 'Un caractère spécial', check: (p: string) => /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(p) },
 ];
 
-const INITIAL_FORM_DATA: SignupFormData = {
-  firstName: '',
-  lastName: '',
-  email: '',
-  password: '',
-  confirmPassword: '',
-  province: '',
-  agreeToTerms: false,
-};
-
-const INITIAL_ONBOARDING_DATA: OnboardingData = {
-  accountType: 'business',
-  companyName: '',
-  companySize: '',
-  industry: '',
-  fiscalYearEnd: 12,
-  currency: 'CAD',
-  primarySource: '',
-  skipSource: false,
-  teamEmails: [],
-  skipTeam: false,
-};
-
-// =====================================================
-// COMPONENT
-// =====================================================
-
 export default function Signup() {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { language } = useI18n();
-  const { resolvedTheme } = useTheme();
   const isEn = language === 'en';
-  const isDark = resolvedTheme === 'dark';
-
-  // Step management
-  const [currentStep, setCurrentStep] = useState<SignupStep>(1);
-  const [showTermsModal, setShowTermsModal] = useState(false);
-
-  // Form state
-  const [formData, setFormData] = useState<SignupFormData>(INITIAL_FORM_DATA);
-  const [onboardingData, setOnboardingData] = useState<OnboardingData>(INITIAL_ONBOARDING_DATA);
+  const [form, setForm] = useState<SignupFields>(EMPTY_FORM);
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [accountCreated, setAccountCreated] = useState(false);
+  const [result, setResult] = useState<RegistrationResult | null>(null);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
+  const [invitationToken] = useState(() => { try { return sessionStorage.getItem('plainledger-pending-invitation') || ''; } catch { return ''; } });
+  const [invitation, setInvitation] = useState<InvitationPreview | null>(null);
+  const [checkingInvitation, setCheckingInvitation] = useState(Boolean(invitationToken));
 
-  // Pre-fill email from URL params (for team invites)
   useEffect(() => {
-    const email = searchParams.get('email');
-    const org = searchParams.get('org');
-    if (email) {
-      setFormData((prev) => ({ ...prev, email }));
-    }
-    if (org) {
-      setOnboardingData((prev) => ({ ...prev, companyName: org }));
-    }
-  }, [searchParams]);
-
-  // Track page view
-  useEffect(() => {
-    analytics.page('signup');
-  }, []);
-
-  // Load saved progress from localStorage
-  useEffect(() => {
-    try {
-      const savedFormData = localStorage.getItem('pl_signup_form_data');
-      const savedOnboardingData = localStorage.getItem('pl_signup_onboarding_data');
-      const savedStep = localStorage.getItem('pl_signup_step');
-      
-      if (savedFormData) {
-        setFormData(JSON.parse(savedFormData));
-      }
-      if (savedOnboardingData) {
-        setOnboardingData(JSON.parse(savedOnboardingData));
-      }
-      if (savedStep && ['1', '2', '3'].includes(savedStep)) {
-        setCurrentStep(parseInt(savedStep) as SignupStep);
-      }
-    } catch (e) {
-      // Ignore errors
+    // Remove legacy signup storage, which previously included plaintext passwords.
+    for (const key of ['pl_signup_form_data', 'pl_signup_onboarding_data', 'pl_signup_step']) {
+      try { localStorage.removeItem(key); } catch { /* Registration does not depend on storage. */ }
     }
   }, []);
 
-  // Save progress to localStorage
-  const saveProgress = useCallback(() => {
-    try {
-      localStorage.setItem('pl_signup_form_data', JSON.stringify(formData));
-      localStorage.setItem('pl_signup_onboarding_data', JSON.stringify(onboardingData));
-      localStorage.setItem('pl_signup_step', currentStep.toString());
-    } catch (e) {
-      // Ignore errors
-    }
-  }, [formData, onboardingData, currentStep]);
-
   useEffect(() => {
-    saveProgress();
-  }, [saveProgress]);
-
-  // Update form field
-  const updateField = (field: keyof SignupFormData, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    setError(null);
-  };
-
-  // Update onboarding data
-  const updateOnboardingData = useCallback((data: Partial<OnboardingData>) => {
-    setOnboardingData((prev) => ({ ...prev, ...data }));
-  }, []);
-
-  // Check password requirements
-  const passwordMet = PASSWORD_REQUIREMENTS.map((req) => ({
-    ...req,
-    met: req.check(formData.password),
-  }));
-  const allPasswordRequirementsMet = passwordMet.every((r) => r.met);
-  const passwordsMatch = formData.password === formData.confirmPassword && formData.confirmPassword.length > 0;
-
-  // Form validation for step 1
-  const isStep1Valid =
-    formData.firstName.trim().length > 0 &&
-    formData.lastName.trim().length > 0 &&
-    formData.email.trim().length > 0 &&
-    formData.email.includes('@') &&
-    formData.province.length > 0 &&
-    allPasswordRequirementsMet &&
-    passwordsMatch &&
-    formData.agreeToTerms;
-
-  // Handle step 1 submission (create account)
-  const handleStep1Submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isStep1Valid || isSubmitting) return;
-
-    setIsSubmitting(true);
-    setError(null);
-
-    try {
-      analytics.track('signup_step1_submitted');
-
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.email.trim().toLowerCase(),
-          firstName: formData.firstName.trim(),
-          lastName: formData.lastName.trim(),
-          password: formData.password,
-          province: formData.province,
-        }),
-      });
-
-      // Check if response is JSON before parsing
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error(isEn 
-          ? 'Server error. Please try again later.' 
-          : 'Erreur du serveur. Veuillez réessayer plus tard.');
-      }
-
-      // Safely parse JSON (some gateways may return HTML with wrong content-type)
-      let data;
-      try {
-        data = await response.json();
-      } catch (parseError) {
-        throw new Error(isEn 
-          ? 'Server error. Please try again later.' 
-          : 'Erreur du serveur. Veuillez réessayer plus tard.');
-      }
-
-      if (!response.ok) {
-        if (data.errors && Array.isArray(data.errors)) {
-          throw new Error(data.errors.join('. '));
+    if (!invitationToken) return;
+    const controller = new AbortController();
+    setCheckingInvitation(true);
+    api.post<InvitationPreview>('/organizations/invitations/preview', { token: invitationToken }, { signal: controller.signal })
+      .then(({ data }) => {
+        if (!data?.email || !data.organizationName || !Number.isFinite(Date.parse(data.expiresAt)) || Date.parse(data.expiresAt) <= Date.now()) {
+          throw new Error(isEn ? 'This invitation is invalid or expired.' : 'Cette invitation est invalide ou expirée.');
         }
-        throw new Error(data.message || (isEn ? 'Registration failed' : 'Échec de l\'inscription'));
-      }
+        if (controller.signal.aborted) return;
+        setInvitation(data);
+        setForm(previous => ({ ...previous, email: data.email }));
+      })
+      .catch(cause => { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Unable to check invitation.'); })
+      .finally(() => { if (!controller.signal.aborted) setCheckingInvitation(false); });
+    return () => controller.abort();
+  }, [invitationToken, isEn]);
 
-      analytics.track('signup_account_created', { userId: data.userId });
-      setAccountCreated(true);
-      
-      // Move to step 2 after account creation
-      setCurrentStep(2);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Registration failed. Please try again.';
-      setError(message);
-      analytics.track('signup_error', { error: message });
-    } finally {
-      setIsSubmitting(false);
-    }
+  const validPassword = PASSWORD_RULES.every(rule => rule.check(form.password)) && form.password.length <= 1024;
+  const canSubmit = form.firstName.trim().length >= 2 && form.lastName.trim().length >= 2 &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()) && form.email.trim().length <= 254 &&
+    CANADIAN_PROVINCES.some(province => province.code === form.province) && validPassword &&
+    form.password === form.confirmPassword && form.agreeToTerms && (!invitationToken || Boolean(invitation));
+  const update = <K extends keyof SignupFields>(key: K, value: SignupFields[K]) => {
+    setForm(previous => ({ ...previous, [key]: value }));
+    if (!invitationToken || invitation) setError(null);
   };
-
-  // Handle step 2 completion
-  const [showIndustryPreview, setShowIndustryPreview] = useState(false);
-  
-  const handleStep2Next = () => {
-    if (onboardingData.companyName.trim().length === 0) {
-      return; // Can't proceed without company name
-    }
-    
-    if (onboardingData.industry && !showIndustryPreview) {
-      // Show industry preview if industry is selected
-      setShowIndustryPreview(true);
-    } else {
-      // Move to step 3
-      setShowIndustryPreview(false);
-      setCurrentStep(3);
-    }
-  };
-
-  // Reset industry preview when changing steps
-  useEffect(() => {
-    if (currentStep !== 2) {
-      setShowIndustryPreview(false);
-    }
-  }, [currentStep]);
-
-  // Handle step 3 completion (final step)
-  const handleStep3Complete = async () => {
-    setIsSubmitting(true);
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!canSubmit || submitting) return;
+    setSubmitting(true);
+    setError(null);
     try {
-      // Save onboarding data
-      const response = await fetch('/api/onboarding/complete', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          companyName: onboardingData.companyName,
-          companySize: onboardingData.companySize,
-          industry: onboardingData.industry,
-          fiscalYearEnd: onboardingData.fiscalYearEnd,
-          currency: onboardingData.currency,
-          primarySource: onboardingData.primarySource,
-          skipSource: onboardingData.skipSource,
-          teamEmails: onboardingData.teamEmails,
-          skipTeam: onboardingData.skipTeam,
-        }),
+      const { data } = await api.post<RegistrationResult>('/auth/register', {
+        firstName: form.firstName.trim(), lastName: form.lastName.trim(), email: form.email.trim().toLowerCase(),
+        password: form.password, province: form.province,
+        ...(invitationToken ? { invitationToken } : form.organizationName.trim() ? { organizationName: form.organizationName.trim() } : {}),
       });
-
-      // Only warn if response is not ok - don't block signup completion
-      if (!response.ok) {
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          console.warn('Failed to save onboarding data');
-        }
-        // Non-JSON response (server error) - continue silently
-      }
-
-      analytics.track('signup_completed');
-      
-      // Clear saved progress
-      localStorage.removeItem('pl_signup_form_data');
-      localStorage.removeItem('pl_signup_onboarding_data');
-      localStorage.removeItem('pl_signup_step');
-
-      // Show brief success message
-      setCurrentStep('success');
-      
-      // Redirect after 2-3 seconds
-      setTimeout(() => {
-        // Check if email is verified (in production, this would check the user's emailVerified status)
-        // For now, redirect to email verification page
-        navigate('/verify-email?email=' + encodeURIComponent(formData.email));
-      }, 2500);
-    } catch (error) {
-      console.error('Error completing signup:', error);
-      setError('Failed to complete setup. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
+      if (data?.success !== true || !data.userId || !data.email) throw new Error(isEn ? 'The server did not confirm account creation.' : 'Le serveur n’a pas confirmé la création du compte.');
+      setResult(data);
+      setForm(previous => ({ ...previous, password: '', confirmPassword: '' }));
+      try { sessionStorage.removeItem('plainledger-pending-invitation'); sessionStorage.removeItem('plainledger-invitation-preview'); } catch { /* Server has consumed the invitation. */ }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : (isEn ? 'Unable to create your account. Please try again.' : 'Impossible de créer votre compte. Veuillez réessayer.'));
+    } finally { setSubmitting(false); }
   };
+  const resend = async () => {
+    if (!result || submitting) return;
+    setSubmitting(true);
+    setError(null);
+    setResendMessage(null);
+    try {
+      const { data } = await api.post<{ message?: string }>('/auth/resend-verification', { email: result.email });
+      setResendMessage(data.message || (isEn ? 'Verification requested. Check your inbox if email delivery is available.' : 'Vérification demandée. Consultez votre boîte de réception si l’envoi est disponible.'));
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to request verification.'); }
+    finally { setSubmitting(false); }
+  };
+  const inputClass = 'w-full min-w-0 rounded-lg border px-3 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-60';
+  const inputStyle = { backgroundColor: 'rgb(var(--color-bg))', borderColor: 'rgb(var(--color-border))', color: 'rgb(var(--color-text))' };
 
-  // Progress calculation
-  const progress = currentStep === 1 ? 33 : currentStep === 2 ? 66 : currentStep === 3 ? 100 : 100;
-
-  // Success state
-  if (currentStep === 'success') {
-    return (
-      <div 
-        className="min-h-screen flex items-center justify-center px-4"
-        style={{ backgroundColor: 'rgb(var(--color-bg))' }}
-      >
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="max-w-md w-full text-center"
-        >
-          <div 
-            className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center"
-            style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}
-          >
-            <PartyPopper className="w-10 h-10" style={{ color: 'rgb(var(--color-success))' }} />
+  return <div className="min-h-screen" style={{ backgroundColor: 'rgb(var(--color-bg))', color: 'rgb(var(--color-text))' }}>
+    <PublicHeader minimal />
+    <main className="mx-auto w-full max-w-2xl px-4 py-8 sm:py-12">
+      <section className="rounded-2xl border p-5 sm:p-8" style={{ backgroundColor: 'rgb(var(--color-surface))', borderColor: 'rgb(var(--color-border))' }}>
+        <Shield className="h-8 w-8 mb-4" aria-hidden="true" style={{ color: 'rgb(var(--color-primary-500))' }} />
+        <h1 className="text-2xl sm:text-3xl font-bold">{result ? (isEn ? 'Your account is created' : 'Votre compte est créé') : (isEn ? 'Create your PlainLedger account' : 'Créez votre compte PlainLedger')}</h1>
+        <p className="mt-3 mb-6" style={{ color: 'rgb(var(--color-text-secondary))' }}>{isEn ? 'Create your account, verify your email, then set up your workspace.' : 'Créez votre compte, vérifiez votre courriel, puis configurez votre espace de travail.'}</p>
+        {error && <div role="alert" className="mb-5 flex items-start gap-2 rounded-lg border p-3 break-words" style={{ borderColor: 'rgb(var(--color-error))' }}><AlertCircle className="w-5 h-5 shrink-0" /><span>{error}</span></div>}
+        {checkingInvitation && <p role="status" className="mb-5 flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />{isEn ? 'Checking your invitation…' : 'Vérification de votre invitation…'}</p>}
+        {invitation && !result && <p className="mb-5 rounded-lg border p-4 break-words">{isEn ? `You are joining ${invitation.organizationName} as ${invitation.email}.` : `Vous rejoignez ${invitation.organizationName} avec ${invitation.email}.`}</p>}
+        {invitationToken && !invitation && !checkingInvitation && !result && <Link className="block mb-5 underline" to="/join">{isEn ? 'Review invitation' : 'Consulter l’invitation'}</Link>}
+        {result ? <div className="space-y-5" role="status">
+          <CheckCircle2 className="h-9 w-9" style={{ color: 'rgb(var(--color-primary-500))' }} />
+          <p className="break-words">{result.verificationEmailSent
+            ? (isEn ? `Check ${result.email} for a verification link. After verification, sign in to continue.` : `Consultez ${result.email} pour le lien de vérification. Ensuite, connectez-vous pour continuer.`)
+            : (isEn ? `Your account was saved, but the verification email could not be sent to ${result.email}. Request another email once delivery is available, or contact support.` : `Votre compte a été enregistré, mais le courriel de vérification n’a pas pu être envoyé à ${result.email}. Demandez un nouvel envoi lorsque le service sera disponible ou contactez le soutien.`)}</p>
+          {invitation && <p>{isEn ? `Your membership in ${invitation.organizationName} has been saved.` : `Votre adhésion à ${invitation.organizationName} a été enregistrée.`}</p>}
+          {resendMessage && <p>{resendMessage}</p>}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Link to="/login" className="rounded-lg px-4 py-3 text-white text-center" style={{ backgroundColor: 'rgb(var(--color-primary-600))' }}>{isEn ? 'Continue to sign in' : 'Continuer la connexion'}</Link>
+            <button type="button" onClick={resend} disabled={submitting} className="rounded-lg border px-4 py-3 disabled:opacity-50">{submitting ? (isEn ? 'Requesting…' : 'Demande…') : (isEn ? 'Resend verification' : 'Renvoyer la vérification')}</button>
           </div>
-          <h1 className="text-2xl font-bold mb-2" style={{ color: 'rgb(var(--color-text))' }}>
-            {isEn ? 'All Set!' : 'Tout est prêt!'}
-          </h1>
-          <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
-            {isEn 
-              ? 'Your account has been created successfully. Redirecting...'
-              : 'Votre compte a été créé avec succès. Redirection...'}
-          </p>
-          <div className="mt-8">
-            <Loader2 className="w-6 h-6 mx-auto animate-spin" style={{ color: 'rgb(var(--color-primary-500))' }} />
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
-
-  return (
-    <div 
-      className="min-h-screen flex flex-col"
-      style={{ backgroundColor: 'rgb(var(--color-bg))' }}
-    >
-      {/* Header - Minimal header with progress indicator */}
-      <PublicHeader 
-        minimal={true}
-        showProgress={{
-          currentStep,
-          totalSteps: 3,
-          progress
-        }}
-      />
-
-      {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-2xl">
-          {/* Step 1: Account Info */}
-          {currentStep === 1 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-6"
-            >
-              {/* Title */}
-              <div className="text-center">
-                <h1 className="text-3xl font-bold mb-2" style={{ color: 'rgb(var(--color-text))' }}>
-                  {isEn ? 'Create your account' : 'Créer votre compte'}
-                </h1>
-                <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                  {isEn 
-                    ? 'Get started for free. No credit card required.'
-                    : 'Commencez gratuitement. Aucune carte de crédit requise.'}
-                </p>
-              </div>
-
-              {/* Form */}
-              <form onSubmit={handleStep1Submit} className="space-y-4">
-                {/* Error Alert */}
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-4 rounded-lg flex items-start gap-3"
-                    style={{ 
-                      backgroundColor: 'rgb(var(--color-error) / 0.1)',
-                      border: '1px solid rgb(var(--color-error) / 0.2)'
-                    }}
-                  >
-                    <AlertCircle className="w-5 h-5 flex-shrink-0" style={{ color: 'rgb(var(--color-error))' }} />
-                    <p className="text-sm" style={{ color: 'rgb(var(--color-error))' }}>{error}</p>
-                  </motion.div>
-                )}
-
-                {/* Name Fields */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'rgb(var(--color-text))' }}>
-                      {isEn ? 'First name' : 'Prénom'} *
-                    </label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                      <input
-                        type="text"
-                        value={formData.firstName}
-                        onChange={(e) => updateField('firstName', e.target.value)}
-                        placeholder={isEn ? 'John' : 'Jean'}
-                        className="w-full pl-10 pr-4 py-2.5 rounded-lg border transition-colors"
-                        style={{
-                          backgroundColor: 'rgb(var(--color-bg-subtle))',
-                          borderColor: 'rgb(var(--color-border))',
-                          color: 'rgb(var(--color-text))',
-                        }}
-                        required
-                        autoFocus
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'rgb(var(--color-text))' }}>
-                      {isEn ? 'Last name' : 'Nom'} *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.lastName}
-                      onChange={(e) => updateField('lastName', e.target.value)}
-                      placeholder={isEn ? 'Doe' : 'Dupont'}
-                      className="w-full px-4 py-2.5 rounded-lg border transition-colors"
-                      style={{
-                        backgroundColor: 'rgb(var(--color-bg-subtle))',
-                        borderColor: 'rgb(var(--color-border))',
-                        color: 'rgb(var(--color-text))',
-                      }}
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* Email */}
-                <div>
-                  <label className="block text-sm font-medium mb-1.5" style={{ color: 'rgb(var(--color-text))' }}>
-                    {isEn ? 'Work email' : 'Courriel professionnel'} *
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => updateField('email', e.target.value)}
-                      placeholder="you@company.com"
-                      className="w-full pl-10 pr-4 py-2.5 rounded-lg border transition-colors"
-                      style={{
-                        backgroundColor: 'rgb(var(--color-bg-subtle))',
-                        borderColor: 'rgb(var(--color-border))',
-                        color: 'rgb(var(--color-text))',
-                      }}
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* Province */}
-                <div>
-                  <label className="block text-sm font-medium mb-1.5" style={{ color: 'rgb(var(--color-text))' }}>
-                    {isEn ? 'Province / Territory' : 'Province / Territoire'} *
-                  </label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                    <select
-                      value={formData.province}
-                      onChange={(e) => updateField('province', e.target.value)}
-                      className="w-full pl-10 pr-10 py-2.5 rounded-lg border transition-colors appearance-none cursor-pointer"
-                      style={{
-                        backgroundColor: 'rgb(var(--color-bg-subtle))',
-                        borderColor: 'rgb(var(--color-border))',
-                        color: formData.province ? 'rgb(var(--color-text))' : 'rgb(var(--color-text-muted))',
-                      }}
-                      required
-                    >
-                      <option value="">{isEn ? 'Select province...' : 'Sélectionner...'}</option>
-                      {CANADIAN_PROVINCES.map((prov) => (
-                        <option key={prov.code} value={prov.code}>
-                          {isEn ? prov.name : prov.nameFr}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                  </div>
-                </div>
-
-                {/* Password */}
-                <div>
-                  <label className="block text-sm font-medium mb-1.5" style={{ color: 'rgb(var(--color-text))' }}>
-                    {isEn ? 'Password' : 'Mot de passe'} *
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={formData.password}
-                      onChange={(e) => updateField('password', e.target.value)}
-                      className="w-full pl-10 pr-12 py-2.5 rounded-lg border transition-colors"
-                      style={{
-                        backgroundColor: 'rgb(var(--color-bg-subtle))',
-                        borderColor: 'rgb(var(--color-border))',
-                        color: 'rgb(var(--color-text))',
-                      }}
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2"
-                      style={{ color: 'rgb(var(--color-text-muted))' }}
-                    >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
-                  </div>
-
-                  {/* Password Requirements */}
-                  {formData.password.length > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      className="mt-3 p-3 rounded-lg"
-                      style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-                    >
-                      <p className="text-xs font-medium mb-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                        {isEn ? 'Password requirements:' : 'Exigences du mot de passe:'}
-                      </p>
-                      <div className="grid grid-cols-2 gap-1">
-                        {passwordMet.map((req) => (
-                          <div key={req.id} className="flex items-center gap-1.5">
-                            {req.met ? (
-                              <Check className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-success))' }} />
-                            ) : (
-                              <X className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                            )}
-                            <span 
-                              className="text-xs"
-                              style={{ color: req.met ? 'rgb(var(--color-success))' : 'rgb(var(--color-text-muted))' }}
-                            >
-                              {isEn ? req.label : req.labelFr}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </div>
-
-                {/* Confirm Password */}
-                <div>
-                  <label className="block text-sm font-medium mb-1.5" style={{ color: 'rgb(var(--color-text))' }}>
-                    {isEn ? 'Confirm password' : 'Confirmer le mot de passe'} *
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                    <input
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      value={formData.confirmPassword}
-                      onChange={(e) => updateField('confirmPassword', e.target.value)}
-                      className="w-full pl-10 pr-12 py-2.5 rounded-lg border transition-colors"
-                      style={{
-                        backgroundColor: 'rgb(var(--color-bg-subtle))',
-                        borderColor: formData.confirmPassword.length > 0 
-                          ? (passwordsMatch ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))') 
-                          : 'rgb(var(--color-border))',
-                        color: 'rgb(var(--color-text))',
-                      }}
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2"
-                      style={{ color: 'rgb(var(--color-text-muted))' }}
-                    >
-                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
-                  </div>
-                  {formData.confirmPassword.length > 0 && !passwordsMatch && (
-                    <p className="text-xs mt-1" style={{ color: 'rgb(var(--color-error))' }}>
-                      {isEn ? 'Passwords do not match' : 'Les mots de passe ne correspondent pas'}
-                    </p>
-                  )}
-                </div>
-
-                {/* Terms */}
-                <div>
-                  <Checkbox
-                    checked={formData.agreeToTerms}
-                    onChange={() => {
-                      // Don't allow direct checkbox toggle - user must go through modal
-                      if (!formData.agreeToTerms) {
-                        setShowTermsModal(true);
-                      }
-                    }}
-                    disabled={formData.agreeToTerms}
-                    label={
-                      isEn ? (
-                        <>
-                          I agree to the{' '}
-                          <button
-                            type="button"
-                            onClick={() => setShowTermsModal(true)}
-                            className="underline hover:no-underline font-medium"
-                            style={{ color: 'rgb(var(--color-primary-500))' }}
-                          >
-                            Terms of Service
-                          </button>{' '}
-                          and{' '}
-                          <Link to="/privacy" className="underline hover:no-underline" style={{ color: 'rgb(var(--color-primary-500))' }}>
-                            Privacy Policy
-                          </Link>
-                        </>
-                      ) : (
-                        <>
-                          J'accepte les{' '}
-                          <button
-                            type="button"
-                            onClick={() => setShowTermsModal(true)}
-                            className="underline hover:no-underline font-medium"
-                            style={{ color: 'rgb(var(--color-primary-500))' }}
-                          >
-                            Conditions d'utilisation
-                          </button>{' '}
-                          et la{' '}
-                          <Link to="/privacy" className="underline hover:no-underline" style={{ color: 'rgb(var(--color-primary-500))' }}>
-                            Politique de confidentialité
-                          </Link>
-                        </>
-                      )
-                    }
-                  />
-                </div>
-
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={!isStep1Valid || isSubmitting}
-                  className="w-full py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{
-                    backgroundColor: isStep1Valid ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-bg-muted))',
-                    color: isStep1Valid ? 'white' : 'rgb(var(--color-text-muted))',
-                  }}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      {isEn ? 'Creating account...' : 'Création du compte...'}
-                    </>
-                  ) : (
-                    <>
-                      {isEn ? 'Continue' : 'Continuer'}
-                      <ChevronRight className="w-5 h-5" />
-                    </>
-                  )}
-                </button>
-              </form>
-
-              {/* Sign In Link */}
-              <div className="text-center">
-                <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                  {isEn ? 'Already have an account?' : 'Vous avez déjà un compte?'}{' '}
-                  <Link 
-                    to="/login" 
-                    className="font-medium"
-                    style={{ color: 'rgb(var(--color-primary-500))' }}
-                  >
-                    {isEn ? 'Sign in' : 'Se connecter'}
-                  </Link>
-                </p>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Step 2: Organization + Industry */}
-          {currentStep === 2 && (
-            <div>
-              {!showIndustryPreview ? (
-                <CompanyInfoStep 
-                  data={onboardingData} 
-                  onChange={updateOnboardingData} 
-                  onNext={handleStep2Next}
-                  onBack={() => setCurrentStep(1)}
-                />
-              ) : (
-                <IndustryPreviewStep
-                  data={onboardingData}
-                  onChange={updateOnboardingData}
-                  onNext={handleStep2Next}
-                  onBack={() => setShowIndustryPreview(false)}
-                />
-              )}
+        </div> : <form onSubmit={submit} className="space-y-5">
+          <fieldset disabled={submitting || checkingInvitation} className="space-y-5 min-w-0">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <label className="block space-y-2" htmlFor="signup-first-name"><span>{isEn ? 'First name' : 'Prénom'}</span><input id="signup-first-name" autoComplete="given-name" required minLength={2} maxLength={100} value={form.firstName} onChange={event => update('firstName', event.target.value)} className={inputClass} style={inputStyle} /></label>
+              <label className="block space-y-2" htmlFor="signup-last-name"><span>{isEn ? 'Last name' : 'Nom'}</span><input id="signup-last-name" autoComplete="family-name" required minLength={2} maxLength={100} value={form.lastName} onChange={event => update('lastName', event.target.value)} className={inputClass} style={inputStyle} /></label>
             </div>
-          )}
-
-          {/* Step 3: Invite Team */}
-          {currentStep === 3 && (
-            <InviteTeamStep 
-              data={onboardingData} 
-              onChange={updateOnboardingData} 
-              onNext={handleStep3Complete}
-              onBack={() => setCurrentStep(2)}
-            />
-          )}
-        </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="py-4 px-6 text-center">
-        <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
-          {isEn 
-            ? 'Need help? Contact support@plainledger.ca'
-            : 'Besoin d\'aide ? Contactez support@plainledger.ca'}
-        </p>
-      </footer>
-
-      {/* Terms Modal */}
-      <TermsModal
-        isOpen={showTermsModal}
-        onAccept={() => {
-          updateField('agreeToTerms', true);
-          setShowTermsModal(false);
-        }}
-        onDecline={() => {
-          setShowTermsModal(false);
-        }}
-      />
-    </div>
-  );
+            <label className="block space-y-2" htmlFor="signup-email"><span>{isEn ? 'Email address' : 'Adresse courriel'}</span><input id="signup-email" type="email" autoComplete="email" required maxLength={254} readOnly={Boolean(invitation)} value={form.email} onChange={event => update('email', event.target.value)} className={inputClass} style={inputStyle} /></label>
+            {!invitationToken && <label className="block space-y-2" htmlFor="signup-organization"><span>{isEn ? 'Organization name (optional)' : 'Nom de l’organisation (facultatif)'}</span><input id="signup-organization" autoComplete="organization" maxLength={255} value={form.organizationName} onChange={event => update('organizationName', event.target.value)} className={inputClass} style={inputStyle} /></label>}
+            <label className="block space-y-2" htmlFor="signup-province"><span>{isEn ? 'Province or territory' : 'Province ou territoire'}</span><select id="signup-province" required value={form.province} onChange={event => update('province', event.target.value)} className={inputClass} style={inputStyle}><option value="">{isEn ? 'Select your province or territory' : 'Sélectionnez votre province ou territoire'}</option>{CANADIAN_PROVINCES.map(province => <option key={province.code} value={province.code}>{isEn ? province.name : province.nameFr}</option>)}</select></label>
+            <label className="block space-y-2" htmlFor="signup-password"><span>{isEn ? 'Password' : 'Mot de passe'}</span><div className="relative"><input id="signup-password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" required minLength={12} maxLength={1024} aria-describedby="signup-password-rules" value={form.password} onChange={event => update('password', event.target.value)} className={`${inputClass} pr-12`} style={inputStyle} /><button type="button" aria-label={showPassword ? (isEn ? 'Hide password' : 'Masquer le mot de passe') : (isEn ? 'Show password' : 'Afficher le mot de passe')} aria-pressed={showPassword} onClick={() => setShowPassword(value => !value)} className="absolute right-0 top-0 h-full w-12 grid place-items-center">{showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}</button></div></label>
+            <ul id="signup-password-rules" className="text-sm space-y-1" aria-label={isEn ? 'Password requirements' : 'Exigences du mot de passe'}>{PASSWORD_RULES.map(rule => <li key={rule.en} className="flex items-center gap-2"><span aria-label={rule.check(form.password) ? (isEn ? 'Met' : 'Respectée') : (isEn ? 'Not met' : 'Non respectée')}>{rule.check(form.password) ? '✓' : '○'}</span>{isEn ? rule.en : rule.fr}</li>)}</ul>
+            <label className="block space-y-2" htmlFor="signup-confirm-password"><span>{isEn ? 'Confirm password' : 'Confirmer le mot de passe'}</span><input id="signup-confirm-password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" required minLength={12} maxLength={1024} aria-invalid={Boolean(form.confirmPassword && form.password !== form.confirmPassword)} value={form.confirmPassword} onChange={event => update('confirmPassword', event.target.value)} className={inputClass} style={inputStyle} />{form.confirmPassword && form.password !== form.confirmPassword && <span className="block text-sm" role="alert">{isEn ? 'Passwords do not match.' : 'Les mots de passe ne correspondent pas.'}</span>}</label>
+            <label className="flex items-start gap-3"><input type="checkbox" required checked={form.agreeToTerms} onChange={event => update('agreeToTerms', event.target.checked)} className="mt-1 h-5 w-5 shrink-0" /><span>{isEn ? 'I agree to the ' : 'J’accepte les '}<Link className="underline" to="/terms" target="_blank" rel="noopener noreferrer">{isEn ? 'Terms of Service' : 'conditions d’utilisation'}</Link>{isEn ? ' and acknowledge the ' : ' et je prends connaissance de la '}<Link className="underline" to="/privacy" target="_blank" rel="noopener noreferrer">{isEn ? 'Privacy Policy' : 'politique de confidentialité'}</Link>.</span></label>
+            <button type="submit" disabled={!canSubmit || submitting} className="w-full rounded-lg py-3 px-4 font-semibold text-white disabled:opacity-50" style={{ backgroundColor: 'rgb(var(--color-primary-600))' }}>{submitting ? (isEn ? 'Creating account…' : 'Création du compte…') : (isEn ? 'Create account' : 'Créer un compte')}</button>
+          </fieldset>
+        </form>}
+        {!result && <p className="mt-6 text-center">{isEn ? 'Already have an account? ' : 'Vous avez déjà un compte? '}<Link className="underline" to={invitationToken ? '/login?redirect=%2Fjoin' : '/login'}>{isEn ? 'Sign in' : 'Se connecter'}</Link></p>}
+      </section>
+    </main>
+  </div>;
 }

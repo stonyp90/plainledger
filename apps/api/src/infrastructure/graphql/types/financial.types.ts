@@ -6,6 +6,8 @@
  */
 import { Field, ObjectType, ID, Float, Int, InputType } from "@nestjs/graphql";
 import { GraphQLISODateTime } from "@nestjs/graphql";
+import { Type } from "class-transformer";
+import { IsOptional, IsString, IsBoolean, IsInt, IsNumber, IsDate, IsArray, IsEnum, Min, Max, Length, MaxLength, ArrayMaxSize, ValidateNested } from "class-validator";
 import {
   AccountType,
   TransactionType,
@@ -35,8 +37,8 @@ export class Account {
   @Field({ nullable: true })
   parentAccountId?: string;
 
-  @Field(() => Float)
-  balance: number;
+  @Field(() => Float, { nullable: true })
+  balance?: number;
 
   @Field({ defaultValue: "CAD" })
   currency: string;
@@ -142,11 +144,11 @@ export class CashFlowSummary {
   @Field(() => Money)
   netCashFlow: Money;
 
-  @Field(() => Float)
-  changePercent: number;
+  @Field(() => Float, { nullable: true })
+  changePercent?: number;
 
-  @Field(() => TrendDirection)
-  trend: TrendDirection;
+  @Field(() => TrendDirection, { nullable: true })
+  trend?: TrendDirection;
 }
 
 @ObjectType({ description: "Revenue breakdown by category" })
@@ -199,8 +201,8 @@ export class DashboardSummary {
   @Field(() => Money)
   accountsPayable: Money;
 
-  @Field(() => CashFlowSummary)
-  cashFlow: CashFlowSummary;
+  @Field(() => CashFlowSummary, { nullable: true })
+  cashFlow?: CashFlowSummary;
 
   @Field(() => [MetricWithTrend])
   keyMetrics: MetricWithTrend[];
@@ -232,11 +234,11 @@ export class FinancialTrend {
   @Field(() => [TimeSeriesPoint])
   data: TimeSeriesPoint[];
 
-  @Field(() => Float)
-  periodChangePercent: number;
+  @Field(() => Float, { nullable: true })
+  periodChangePercent?: number;
 
-  @Field(() => TrendDirection)
-  trend: TrendDirection;
+  @Field(() => TrendDirection, { nullable: true })
+  trend?: TrendDirection;
 }
 
 // =====================================================
@@ -358,72 +360,126 @@ export class IncomeStatement {
 @InputType({ description: "Date range filter input" })
 export class DateRangeInput {
   @Field(() => GraphQLISODateTime)
+  @IsDate()
+  @Type(() => Date)
   startDate: Date;
 
   @Field(() => GraphQLISODateTime)
+  @IsDate()
+  @Type(() => Date)
   endDate: Date;
 }
 
 @InputType({ description: "Pagination input" })
 export class PaginationInput {
   @Field(() => Int, { defaultValue: 1 })
+  @IsInt()
+  @Min(1)
   page: number;
 
   @Field(() => Int, { defaultValue: 20 })
+  @IsInt()
+  @Min(1)
+  @Max(250)
   pageSize: number;
 }
 
 @InputType({ description: "Account filter input" })
 export class AccountFilterInput {
   @Field(() => [AccountType], { nullable: true })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(5)
+  @IsEnum(AccountType, { each: true })
   types?: AccountType[];
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
   search?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsBoolean()
   isActive?: boolean;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
   parentAccountId?: string;
 }
 
 @InputType({ description: "Transaction filter input" })
 export class TransactionFilterInput {
   @Field(() => DateRangeInput, { nullable: true })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => DateRangeInput)
   dateRange?: DateRangeInput;
 
   @Field(() => [TransactionType], { nullable: true })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsEnum(TransactionType, { each: true })
   types?: TransactionType[];
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
   accountId?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
   contactId?: string;
 
   @Field(() => Float, { nullable: true })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
   minAmount?: number;
 
   @Field(() => Float, { nullable: true })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
   maxAmount?: number;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
   search?: string;
 }
 
 @InputType({ description: "Dashboard filter input" })
 export class DashboardFilterInput {
   @Field(() => DateRangeInput, { nullable: true })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => DateRangeInput)
   dateRange?: DateRangeInput;
 
   @Field({ nullable: true, defaultValue: "month" })
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
   period?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsBoolean()
   compareWithPrevious?: boolean;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
   industryId?: string;
 }
 
@@ -820,24 +876,40 @@ export class BudgetSettings {
 @InputType({ description: "Budget category input" })
 export class BudgetCategoryInput {
   @Field()
+  @IsString()
+  @Length(1, 100)
   categoryId: string;
 
   @Field()
+  @IsString()
+  @Length(1, 200)
   categoryName: string;
 
   @Field()
+  @IsString()
+  @Length(1, 200)
   categoryNameEn: string;
 
   @Field(() => Float)
+  @IsNumber()
+  @Min(0)
+  @Max(1000000000000)
   monthlyAmount: number;
 }
 
 @InputType({ description: "Save budget settings input" })
 export class SaveBudgetInput {
   @Field(() => Int)
+  @IsInt()
+  @Min(1900)
+  @Max(9999)
   year: number;
 
   @Field(() => [BudgetCategoryInput])
+  @IsArray()
+  @ArrayMaxSize(500)
+  @ValidateNested({ each: true })
+  @Type(() => BudgetCategoryInput)
   categories: BudgetCategoryInput[];
 }
 

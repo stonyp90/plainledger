@@ -310,6 +310,7 @@ export function DataVisualizationCard({
   size = 'medium',
   isBookmarked = false,
   onBookmark,
+  onAddToView,
 }: DataVisualizationCardProps) {
   const { language } = useI18n();
   const isEn = language === 'en';
@@ -361,8 +362,7 @@ export function DataVisualizationCard({
   };
   
   const handleAddToView = (viewId: string) => {
-    console.log(`Adding chart to view: ${viewId}`);
-    setShowViewMenu(false);
+    onAddToView?.(viewId);
     setShowOptions(false);
   };
   
@@ -1899,7 +1899,7 @@ export function ChartGalleryModal({ isOpen, onClose, onSelectChart, onBuildCusto
                   style={{
                     backgroundColor: 'rgb(var(--color-bg))',
                     borderColor: isPinned ? 'rgb(var(--color-success))' : 'rgb(var(--color-border))',
-                    ringColor: isPinned ? 'rgb(var(--color-success))' : undefined,
+                    boxShadow: `0 0 0 2px ${isPinned ? 'rgb(var(--color-success))' : undefined}`,
                   }}
                   onClick={() => {
                     onSelectChart?.(chart);
@@ -2041,7 +2041,7 @@ export function ChartGallery({ onSelectChart }: ChartGalleryProps) {
               key={chart.id}
               className={`card p-4 cursor-pointer hover:shadow-lg transition-all ${isPinned ? 'ring-2 ring-offset-2' : ''}`}
               style={{
-                ringColor: isPinned ? 'rgb(var(--color-success))' : undefined,
+                boxShadow: `0 0 0 2px ${isPinned ? 'rgb(var(--color-success))' : undefined}`,
               }}
               onClick={() => onSelectChart?.(chart)}
             >

@@ -39,7 +39,7 @@ export const CRISP_THEME_CONFIG = {
   color: '#1e40af', // Primary blue
   colorDark: '#1e3a8a', // Darker for hover
   // Position
-  position: 'right' as const,
+  position: 'right' as 'right' | 'left',
   // Default locale (Canadian market = English, with French support)
   defaultLocale: 'en',
 };
@@ -274,8 +274,8 @@ export function CrispProvider({ websiteId, children }: CrispProviderProps) {
         }
 
         // Set avatar if available
-        if (user.avatar) {
-          window.$crisp.push(['set', 'user:avatar', [user.avatar]]);
+        if (user.picture) {
+          window.$crisp.push(['set', 'user:avatar', [user.picture]]);
         }
 
         // Set segments for targeting
