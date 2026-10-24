@@ -387,7 +387,7 @@ jobs:
         id: login-ecr
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build and push ${{ matrix.app.name }}
         if: ${{ matrix.app.name == 'api' || github.event.inputs.deploy_api_only != 'true' }}
