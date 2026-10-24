@@ -391,7 +391,7 @@ jobs:
 
       - name: Build and push ${{ matrix.app.name }}
         if: ${{ matrix.app.name == 'api' || github.event.inputs.deploy_api_only != 'true' }}
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ${{ matrix.app.context }}
           file: ${{ matrix.app.dockerfile }}
