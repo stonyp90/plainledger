@@ -39,7 +39,7 @@
     "lucide-react": "^0.563.0",
     "posthog-js": "^1.343.1",
     "powerbi-client": "^2.23.1",
-    "react": "^19.0.0",
+    "react": "^19.3.1",
     "react-dom": "^19.0.0",
     "react-qr-code": "^2.0.18",
     "react-router-dom": "^7.1.5"
@@ -57,7 +57,7 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^14.6.0",
-    "@types/react": "^19.2.13",
+    "@types/react": "^19.3.0",
     "@types/react-dom": "^19.0.3",
     "@typescript-eslint/eslint-plugin": "^8.23.0",
     "@typescript-eslint/parser": "^8.23.0",
